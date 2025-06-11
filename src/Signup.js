@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from './contexts/AuthContext';
 import './Signup.css';
 
 function Signup() {
@@ -9,21 +10,42 @@ function Signup() {
     password: '',
     confirmPassword: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { signup } = useAuth();
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    if (error) setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match!');
+      setError('Passwords do not match!');
       return;
     }
-    console.log('Signup form submitted:', formData);
+
+    setLoading(true);
+    setError('');
+
+    try {
+      await signup({
+        username: formData.name,
+        email: formData.email,
+        password: formData.password
+      });
+      navigate('/');
+    } catch (err) {
+      console.error('Signup error:', err);
+      setError(err.message || err.error || 'Signup failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -34,6 +56,7 @@ function Signup() {
           <h2>Sign Up</h2>
         </div>
         <form onSubmit={handleSubmit}>
+          {error && <div className="error-message">{error}</div>}
           <div className="form-group">
             <label htmlFor="name">Full Name:</label>
             <input
@@ -43,6 +66,7 @@ function Signup() {
               value={formData.name}
               onChange={handleChange}
               required
+              disabled={loading}
             />
           </div>
           <div className="form-group">
@@ -54,6 +78,7 @@ function Signup() {
               value={formData.email}
               onChange={handleChange}
               required
+              disabled={loading}
             />
           </div>
           <div className="form-group">
@@ -65,6 +90,7 @@ function Signup() {
               value={formData.password}
               onChange={handleChange}
               required
+              disabled={loading}
             />
           </div>
           <div className="form-group">
@@ -76,9 +102,12 @@ function Signup() {
               value={formData.confirmPassword}
               onChange={handleChange}
               required
+              disabled={loading}
             />
           </div>
-          <button type="submit" className="signup-btn">Sign Up</button>
+          <button type="submit" className="signup-btn" disabled={loading}>
+            {loading ? 'Signing up...' : 'Sign Up'}
+          </button>
         </form>
         <p className="login-link">
           Already have an account? <Link to="/login">Login here</Link>

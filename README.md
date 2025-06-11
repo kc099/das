@@ -39,32 +39,61 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
-## Learn More
+✅ Complete Authentication Setup
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+  1. API Service (src/services/api.js)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+  - Axios configuration with base URL for your Django backend
+  - Automatic token attachment to requests
+  - Error handling for 401 responses
+  - Login/signup/logout endpoints
 
-### Code Splitting
+  2. Authentication Utilities (src/utils/auth.js)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+  - Token management in localStorage
+  - User data storage/retrieval
+  - Authentication status checking
 
-### Analyzing the Bundle Size
+  3. Authentication Context (src/contexts/AuthContext.js)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+  - Centralized auth state management
+  - Login/signup/logout methods
+  - User session persistence
 
-### Making a Progressive Web App
+  4. Updated Components
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+  - Login: Calls api/login/ with email/password, stores token
+  - Signup: Calls api/signup/ with username/email/password
+  - Error handling, loading states, form validation
+  - Automatic redirect to homepage on success
 
-### Advanced Configuration
+  🔧 Configuration Needed
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+  Update API URL in src/services/api.js:4:
+  const API_BASE_URL = 'http://localhost:8000'; // Change to your Django server
 
-### Deployment
+  🔌 Django Backend Requirements
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+  Your Django backend should return:
 
-### `npm run build` fails to minify
+  Login Response (POST /api/login/):
+  {
+    "token": "your-jwt-token",
+    "user": {
+      "id": 1,
+      "username": "user",
+      "email": "user@example.com"
+    }
+  }
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+  Signup Response (POST /api/signup/):
+  {
+    "token": "your-jwt-token",
+    "user": {
+      "id": 1,
+      "username": "user",
+      "email": "user@example.com"
+    }
+  }
+
+  🚀 Ready to Use

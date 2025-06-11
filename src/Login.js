@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from './contexts/AuthContext';
 import './Login.css';
 
 function Login() {
@@ -7,17 +8,36 @@ function Login() {
     email: '',
     password: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    if (error) setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Login form submitted:', formData);
+    setLoading(true);
+    setError('');
+
+    try {
+      await login({
+        email: formData.email,
+        password: formData.password
+      });
+      navigate('/');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.message || err.error || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -28,6 +48,7 @@ function Login() {
           <h2>Login</h2>
         </div>
         <form onSubmit={handleSubmit}>
+          {error && <div className="error-message">{error}</div>}
           <div className="form-group">
             <label htmlFor="email">Email:</label>
             <input
@@ -37,6 +58,7 @@ function Login() {
               value={formData.email}
               onChange={handleChange}
               required
+              disabled={loading}
             />
           </div>
           <div className="form-group">
@@ -48,9 +70,12 @@ function Login() {
               value={formData.password}
               onChange={handleChange}
               required
+              disabled={loading}
             />
           </div>
-          <button type="submit" className="login-btn">Login</button>
+          <button type="submit" className="login-btn" disabled={loading}>
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
         </form>
         <p className="signup-link">
           Don't have an account? <Link to="/signup">Sign up here</Link>
