@@ -38,18 +38,30 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-  login: async (credentials) => {
+  // Get RSA public key from backend
+  getPublicKey: async () => {
     try {
-      const response = await api.post('/api/login/', credentials);
+      const response = await api.get('/api/public-key/');
+      return response.data.public_key;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  login: async (credentials, encryptedData = null) => {
+    try {
+      const payload = encryptedData || credentials;
+      const response = await api.post('/api/login/', payload);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
     }
   },
 
-  signup: async (userData) => {
+  signup: async (userData, encryptedData = null) => {
     try {
-      const response = await api.post('/api/signup/', userData);
+      const payload = encryptedData || userData;
+      const response = await api.post('/api/signup/', payload);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

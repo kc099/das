@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import { authAPI } from './services/api';
+import { encryptFormData } from './utils/encryption';
 import './Login.css';
 
 function Login() {
@@ -10,8 +12,27 @@ function Login() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [publicKey, setPublicKey] = useState(null);
+  const [keyLoading, setKeyLoading] = useState(true);
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  // Fetch public key on component mount
+  useEffect(() => {
+    const fetchPublicKey = async () => {
+      try {
+        const key = await authAPI.getPublicKey();
+        setPublicKey(key);
+      } catch (err) {
+        console.error('Failed to fetch public key:', err);
+        setError('Failed to initialize secure connection. Please refresh the page.');
+      } finally {
+        setKeyLoading(false);
+      }
+    };
+
+    fetchPublicKey();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -23,14 +44,25 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!publicKey) {
+      setError('Secure connection not available. Please refresh the page.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
+      // Encrypt sensitive data
+      const encryptedPayload = await encryptFormData(formData, publicKey);
+      
+      // Send encrypted data to backend through auth context
       await login({
         email: formData.email,
         password: formData.password
-      });
+      }, encryptedPayload);
+      
       navigate('/');
     } catch (err) {
       console.error('Login error:', err);
@@ -73,8 +105,8 @@ function Login() {
               disabled={loading}
             />
           </div>
-          <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+          <button type="submit" className="login-btn" disabled={loading || keyLoading || !publicKey}>
+            {keyLoading ? 'Securing connection...' : loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
         <p className="signup-link">

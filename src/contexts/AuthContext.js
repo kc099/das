@@ -41,9 +41,9 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  const login = async (credentials) => {
+  const login = async (credentials, encryptedData = null) => {
     try {
-      const response = await authAPI.login(credentials);
+      const response = await authAPI.login(credentials, encryptedData);
       if (response.token) {
         setToken(response.token);
         if (response.user) {
@@ -58,9 +58,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = async (userData) => {
+  const signup = async (userData, encryptedData = null) => {
     try {
-      const response = await authAPI.signup(userData);
+      const response = await authAPI.signup(userData, encryptedData);
       if (response.token) {
         setToken(response.token);
         if (response.user) {
