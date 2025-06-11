@@ -1,0 +1,95 @@
+.navbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e6e6e6;
+  z-index: 1000;
+  height: 80px;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+}
+
+.nav-logo h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #635bff;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: #666;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s;
+  padding: 10px 16px;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.nav-link:hover {
+  color: #1a1a1a;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Buttons (shared) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: #635bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #5a54e5;
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  color: #635bff;
+  border: 2px solid #635bff;
+}
+
+.btn-outline:hover {
+  background: #635bff;
+  color: white;
+} 

@@ -26,45 +26,55 @@
   backdrop-filter: blur(10px);
   border-bottom: 1px solid #e6e6e6;
   z-index: 1000;
+  height: 80px;
 }
 
 .nav-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 20px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 70px;
+  height: 100%;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
 }
 
 .nav-logo h2 {
   font-size: 24px;
   font-weight: 700;
   color: #635bff;
+  margin: 0;
+  padding: 0;
 }
 
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 24px;
-  height: 100%;
+  gap: 16px;
 }
 
 .nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   text-decoration: none;
   color: #666;
   font-weight: 500;
   font-size: 14px;
-  transition: color 0.2s;
-  display: flex;
-  align-items: center;
-  height: 36px;
-  padding: 0 8px;
+  transition: all 0.2s;
+  padding: 10px 16px;
+  border-radius: 6px;
+  line-height: 1;
 }
 
 .nav-link:hover {
   color: #1a1a1a;
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* Buttons */
@@ -72,7 +82,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 16px;
+  padding: 10px 16px;
   border-radius: 6px;
   font-weight: 600;
   text-decoration: none;
@@ -80,7 +90,7 @@
   cursor: pointer;
   border: none;
   font-size: 14px;
-  height: 36px;
+  white-space: nowrap;
 }
 
 .btn-primary {
@@ -111,7 +121,8 @@
 
 /* Hero Section */
 .hero {
-  padding: 120px 0 80px;
+  padding: 100px 0 80px;
+  margin-top: 80px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   overflow: hidden;
