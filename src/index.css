@@ -1,3 +1,23 @@
+:root {
+  /* Primary Theme Colors */
+  --primary-color: #22c55e;
+  --primary-hover: #16a34a;
+  --primary-light: #86efac;
+  
+  /* Gradient Colors */
+  --gradient-start: #10b981;
+  --gradient-end: #047857;
+  
+  /* Secondary Colors */
+  --secondary-color: #059669;
+  --secondary-hover: #047857;
+  
+  /* Text Colors */
+  --text-primary: #1a1a1a;
+  --text-secondary: #666;
+  --text-light: #999;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

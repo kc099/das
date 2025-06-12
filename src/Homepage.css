@@ -47,7 +47,7 @@
 .nav-logo h2 {
   font-size: 24px;
   font-weight: 700;
-  color: #635bff;
+  color: var(--primary-color);
   margin: 0;
   padding: 0;
 }
@@ -94,23 +94,23 @@
 }
 
 .btn-primary {
-  background: #635bff;
+  background: var(--primary-color);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #5a54e5;
+  background: var(--primary-hover);
   transform: translateY(-1px);
 }
 
 .btn-outline {
   background: transparent;
-  color: #635bff;
-  border: 2px solid #635bff;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
 }
 
 .btn-outline:hover {
-  background: #635bff;
+  background: var(--primary-color);
   color: white;
 }
 
@@ -123,7 +123,7 @@
 .hero {
   padding: 100px 0 80px;
   margin-top: 80px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
   color: white;
   overflow: hidden;
 }
@@ -222,7 +222,7 @@
 }
 
 .widget {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
   border-radius: 8px;
   opacity: 0.8;
 }
@@ -311,7 +311,7 @@
 .step-number {
   width: 48px;
   height: 48px;
-  background: #635bff;
+  background: var(--primary-color);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -399,7 +399,7 @@
 .stat-number {
   font-size: 48px;
   font-weight: 700;
-  color: #635bff;
+  color: var(--primary-color);
   margin-bottom: 8px;
 }
 
@@ -415,7 +415,7 @@
 /* Final CTA Section */
 .final-cta {
   padding: 100px 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
   color: white;
   text-align: center;
 }
@@ -465,7 +465,7 @@
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 16px;
-  color: #635bff;
+  color: var(--primary-color);
 }
 
 .footer-brand p {
