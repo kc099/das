@@ -183,6 +183,13 @@ function Dashboard() {
                 <p>Analyze sensor data</p>
               </div>
             </button>
+            <button className="action-card" onClick={() => navigate('/flow-editor')}>
+              <div className="action-icon">🔗</div>
+              <div className="action-content">
+                <h3>Flow Editor</h3>
+                <p>Create visual flows</p>
+              </div>
+            </button>
             <button className="action-card">
               <div className="action-icon">⚙️</div>
               <div className="action-content">

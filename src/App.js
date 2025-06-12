@@ -4,6 +4,7 @@ import Homepage from './Homepage';
 import Login from './Login';
 import Signup from './Signup';
 import Dashboard from './Dashboard';
+import FlowEditor from './FlowEditor';
 import './App.css';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/flow-editor" element={<FlowEditor />} />
       </Routes>
     </Router>
   );
