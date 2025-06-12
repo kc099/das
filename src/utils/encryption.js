@@ -113,3 +113,165 @@ export const encryptFormData = async (formData, publicKey) => {
     iv: iv
   };
 };
+
+// Frontend encryption utilities for secure authentication
+
+class EncryptionManager {
+  constructor() {
+    this.publicKey = null;
+  }
+
+  async loadPublicKey(publicKeyPem) {
+    try {
+      // Import the RSA public key
+      const binaryDerString = window.atob(
+        publicKeyPem
+          .replace(/-----BEGIN PUBLIC KEY-----/, '')
+          .replace(/-----END PUBLIC KEY-----/, '')
+          .replace(/\s/g, '')
+      );
+      
+      const binaryDer = new Uint8Array(binaryDerString.length);
+      for (let i = 0; i < binaryDerString.length; i++) {
+        binaryDer[i] = binaryDerString.charCodeAt(i);
+      }
+
+      this.publicKey = await window.crypto.subtle.importKey(
+        'spki',
+        binaryDer,
+        {
+          name: 'RSA-OAEP',
+          hash: 'SHA-256',
+        },
+        false,
+        ['encrypt']
+      );
+    } catch (error) {
+      console.error('Failed to load public key:', error);
+      throw new Error('Invalid public key format');
+    }
+  }
+
+  async generateAESKey() {
+    return await window.crypto.subtle.generateKey(
+      {
+        name: 'AES-CBC',
+        length: 256,
+      },
+      true,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  async encryptWithAES(data, key, iv) {
+    const encoder = new TextEncoder();
+    const encodedData = encoder.encode(data);
+    
+    const encrypted = await window.crypto.subtle.encrypt(
+      {
+        name: 'AES-CBC',
+        iv: iv,
+      },
+      key,
+      encodedData
+    );
+
+    return new Uint8Array(encrypted);
+  }
+
+  async encryptWithRSA(data) {
+    if (!this.publicKey) {
+      throw new Error('Public key not loaded');
+    }
+
+    const encoder = new TextEncoder();
+    const encodedData = encoder.encode(data);
+
+    const encrypted = await window.crypto.subtle.encrypt(
+      {
+        name: 'RSA-OAEP',
+      },
+      this.publicKey,
+      encodedData
+    );
+
+    return new Uint8Array(encrypted);
+  }
+
+  arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+  }
+
+  arrayBufferToHex(buffer) {
+    return Array.from(new Uint8Array(buffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  async encryptFormData(formData, sensitiveFields = ['password']) {
+    try {
+      if (!this.publicKey) {
+        throw new Error('Encryption not available - public key not loaded');
+      }
+
+      // Generate AES key and IV
+      const aesKey = await this.generateAESKey();
+      const iv = window.crypto.getRandomValues(new Uint8Array(16));
+
+      // Export AES key to encrypt it with RSA
+      const exportedKey = await window.crypto.subtle.exportKey('raw', aesKey);
+      const keyHex = this.arrayBufferToHex(exportedKey);
+
+      // Encrypt the AES key with RSA
+      const encryptedAESKey = await this.encryptWithRSA(keyHex);
+
+      // Prepare data for encryption
+      const encryptedData = {};
+      
+      for (const [field, value] of Object.entries(formData)) {
+        if (sensitiveFields.includes(field)) {
+          // Encrypt sensitive fields
+          const encryptedValue = await this.encryptWithAES(value, aesKey, iv);
+          encryptedData[field] = {
+            data: this.arrayBufferToBase64(encryptedValue),
+            encrypted: true
+          };
+        } else {
+          // Keep non-sensitive fields as plain text
+          encryptedData[field] = value;
+        }
+      }
+
+      return {
+        data: encryptedData,
+        key: this.arrayBufferToBase64(encryptedAESKey),
+        iv: this.arrayBufferToHex(iv)
+      };
+    } catch (error) {
+      console.error('Encryption failed:', error);
+      // Fallback to plain data if encryption fails
+      return formData;
+    }
+  }
+}
+
+// Global instance
+export const encryptionManager = new EncryptionManager();
+
+// Helper function to encrypt login/signup data
+export async function encryptAuthData(formData, publicKeyPem) {
+  try {
+    await encryptionManager.loadPublicKey(publicKeyPem);
+    return await encryptionManager.encryptFormData(formData, ['password']);
+  } catch (error) {
+    console.warn('Encryption failed, using plain data:', error);
+    return formData;
+  }
+}
+
+export default encryptionManager;

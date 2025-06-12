@@ -1,8 +1,9 @@
 import axios from 'axios';
 
-// Configure your Django backend URL
-const API_BASE_URL = 'http://localhost:8000'; // Change this to your Django backend URL
+// Configure base URL for Django backend
+const API_BASE_URL = 'http://localhost:8000';
 
+// Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -10,10 +11,10 @@ const api = axios.create({
   },
 });
 
-// Add auth token to requests if available
+// Add request interceptor to include auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -24,12 +25,14 @@ api.interceptors.request.use(
   }
 );
 
-// Handle auth errors
+// Add response interceptor to handle 401 errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('authToken');
+      // Token expired or invalid, redirect to login
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
@@ -37,56 +40,22 @@ api.interceptors.response.use(
   }
 );
 
+// API endpoints
 export const authAPI = {
-  // Get RSA public key from backend
-  getPublicKey: async () => {
-    try {
-      const response = await api.get('/api/public-key/');
-      return response.data.public_key;
-    } catch (error) {
-      throw error.response?.data || error.message;
-    }
-  },
-
-  login: async (credentials, encryptedData = null) => {
-    try {
-      const payload = encryptedData || credentials;
-      const response = await api.post('/api/login/', payload);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
-    }
-  },
-
-  signup: async (userData, encryptedData = null) => {
-    try {
-      const payload = encryptedData || userData;
-      const response = await api.post('/api/signup/', payload);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
-    }
-  },
-
-  logout: async () => {
-    try {
-      await api.post('/api/logout/');
-    } catch (error) {
-      console.error('Logout API call failed:', error);
-    } finally {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-    }
-  },
-
-  getCurrentUser: async () => {
-    try {
-      const response = await api.get('/api/user/');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
-    }
-  }
+  // Get RSA public key for encryption
+  getPublicKey: () => api.get('/api/public-key/'),
+  
+  // Login with email and password
+  login: (credentials) => api.post('/api/login/', credentials),
+  
+  // Register new user
+  signup: (userData) => api.post('/api/signup/', userData),
+  
+  // Logout user
+  logout: (refreshToken) => api.post('/api/logout/', { refresh: refreshToken }),
+  
+  // Get user profile
+  getProfile: () => api.get('/api/profile/'),
 };
 
 export default api;

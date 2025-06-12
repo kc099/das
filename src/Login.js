@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from './contexts/AuthContext';
 import { authAPI } from './services/api';
-import { encryptFormData } from './utils/encryption';
+import { encryptAuthData } from './utils/encryption';
 import './Login.css';
 
 function Login() {
@@ -13,25 +12,20 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [publicKey, setPublicKey] = useState(null);
-  const [keyLoading, setKeyLoading] = useState(true);
   const navigate = useNavigate();
-  const { login } = useAuth();
 
-  // Fetch public key on component mount
   useEffect(() => {
-    const fetchPublicKey = async () => {
+    // Load public key on component mount
+    const loadPublicKey = async () => {
       try {
-        const key = await authAPI.getPublicKey();
-        setPublicKey(key);
-      } catch (err) {
-        console.error('Failed to fetch public key:', err);
-        setError('Failed to initialize secure connection. Please refresh the page.');
-      } finally {
-        setKeyLoading(false);
+        const response = await authAPI.getPublicKey();
+        setPublicKey(response.data.public_key);
+      } catch (error) {
+        console.warn('Failed to load public key, using plain authentication:', error);
       }
     };
-
-    fetchPublicKey();
+    
+    loadPublicKey();
   }, []);
 
   const handleChange = (e) => {
@@ -39,34 +33,38 @@ function Login() {
       ...formData,
       [e.target.name]: e.target.value
     });
-    if (error) setError('');
+    setError(''); // Clear error when user types
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!publicKey) {
-      setError('Secure connection not available. Please refresh the page.');
-      return;
-    }
-
     setLoading(true);
     setError('');
 
     try {
-      // Encrypt sensitive data
-      const encryptedPayload = await encryptFormData(formData, publicKey);
+      // Encrypt data if public key is available
+      let payload = formData;
+      if (publicKey) {
+        payload = await encryptAuthData(formData, publicKey);
+      }
+
+      const response = await authAPI.login(payload);
       
-      // Send encrypted data to backend through auth context
-      await login({
-        email: formData.email,
-        password: formData.password
-      }, encryptedPayload);
-      
-      navigate('/');
-    } catch (err) {
-      console.error('Login error:', err);
-      setError(err.message || err.error || 'Login failed. Please try again.');
+      if (response.data.status === 'success') {
+        // Store tokens and user data
+        localStorage.setItem('access_token', response.data.token);
+        localStorage.setItem('refresh_token', response.data.refresh);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        // Redirect to homepage
+        navigate('/');
+      } else {
+        setError(response.data.error || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      const errorMessage = error.response?.data?.error || 'Login failed. Please try again.';
+      setError(typeof errorMessage === 'string' ? errorMessage : 'Invalid email or password.');
     } finally {
       setLoading(false);
     }
@@ -77,10 +75,21 @@ function Login() {
       <div className="login-form">
         <div className="form-header">
           <Link to="/" className="back-home">← Back to Home</Link>
-          <h2>Login</h2>
+          <h2>Login to EdgeSync</h2>
+          {publicKey && (
+            <div className="encryption-status">
+              🔒 Secure connection enabled
+            </div>
+          )}
         </div>
+        
+        {error && (
+          <div className="error-message">
+            {error}
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit}>
-          {error && <div className="error-message">{error}</div>}
           <div className="form-group">
             <label htmlFor="email">Email:</label>
             <input
@@ -105,8 +114,8 @@ function Login() {
               disabled={loading}
             />
           </div>
-          <button type="submit" className="login-btn" disabled={loading || keyLoading || !publicKey}>
-            {keyLoading ? 'Securing connection...' : loading ? 'Logging in...' : 'Login'}
+          <button type="submit" className="login-btn" disabled={loading}>
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
         <p className="signup-link">
