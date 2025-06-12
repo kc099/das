@@ -7,7 +7,7 @@ import './CustomNode.css';
 function CustomNode({ data, selected }) {
   const getIcon = (iconName) => {
     const IconComponent = Icons[iconName];
-    return IconComponent ? <IconComponent size={14} /> : <Icons.Circle size={14} />;
+    return IconComponent ? <IconComponent size={12} /> : <Icons.Circle size={12} />;
   };
 
   const getEssentialConfig = (data) => {
@@ -82,8 +82,8 @@ function CustomNode({ data, selected }) {
 
   return (
     <div
-      className={`custom-node ${selected ? 'selected' : ''}`}
-      style={{ borderColor: color }}
+      className={`custom-node-minimal ${selected ? 'selected' : ''}`}
+      style={{ backgroundColor: color }}
     >
       {/* Input Handle */}
       {hasInput && (
@@ -91,38 +91,16 @@ function CustomNode({ data, selected }) {
           type="target"
           position={Position.Left}
           id="input"
-          className="node-handle"
+          className="minimal-handle"
         />
       )}
 
-      {/* Node Content */}
-      <div className="node-header" style={{ backgroundColor: color }}>
-        <div className="node-icon">
+      {/* Node Content - Just icon and name */}
+      <div className="minimal-content">
+        <div className="minimal-icon">
           {getIcon(icon)}
         </div>
-        <span className="node-title">{displayLabel}</span>
-      </div>
-
-      <div className="node-body">
-        {/* Show subtype for nodes that have it */}
-        {data.subtype && (
-          <div className="node-subtype">
-            {data.subtype}
-          </div>
-        )}
-
-        {/* Show only the most essential config value */}
-        {data.config && (
-          <div className="node-config">
-            {getEssentialConfig(data)}
-          </div>
-        )}
-
-        {/* Node status indicator */}
-        <div className="node-status">
-          <div className="status-dot" />
-          <span className="status-text">Ready</span>
-        </div>
+        <span className="minimal-title">{displayLabel}</span>
       </div>
 
       {/* Output Handle */}
@@ -131,7 +109,7 @@ function CustomNode({ data, selected }) {
           type="source"
           position={Position.Right}
           id="output"
-          className="node-handle"
+          className="minimal-handle"
         />
       )}
     </div>

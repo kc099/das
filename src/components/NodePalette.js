@@ -120,6 +120,7 @@ function NodePalette({ categories, isCollapsed }) {
                             <div
                               key={`${nodeKey}-${subtypeKey}`}
                               className="palette-node subtype"
+                              style={{ borderLeftColor: category.color }}
                               draggable
                               onDragStart={(event) =>
                                 onDragStart(event, {
@@ -131,7 +132,7 @@ function NodePalette({ categories, isCollapsed }) {
                                 })
                               }
                             >
-                              <div className="node-icon">
+                              <div className="node-icon" style={{ color: category.color }}>
                                 {getIcon(node.icon)}
                               </div>
                               <span className="node-label">{subtype.label}</span>
@@ -146,6 +147,7 @@ function NodePalette({ categories, isCollapsed }) {
                       <div
                         key={nodeKey}
                         className="palette-node"
+                        style={{ borderLeftColor: category.color }}
                         draggable
                         onDragStart={(event) =>
                           onDragStart(event, {
@@ -156,7 +158,7 @@ function NodePalette({ categories, isCollapsed }) {
                           })
                         }
                       >
-                        <div className="node-icon">
+                        <div className="node-icon" style={{ color: category.color }}>
                           {getIcon(node.icon)}
                         </div>
                         <span className="node-label">{node.label}</span>
