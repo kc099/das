@@ -269,8 +269,8 @@ export async function encryptAuthData(formData, publicKeyPem) {
     await encryptionManager.loadPublicKey(publicKeyPem);
     return await encryptionManager.encryptFormData(formData, ['password']);
   } catch (error) {
-    console.warn('Encryption failed, using plain data:', error);
-    return formData;
+    console.error('Encryption failed:', error);
+    throw new Error('Failed to encrypt authentication data. Please try again.');
   }
 }
 

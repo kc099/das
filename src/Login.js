@@ -12,16 +12,21 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [publicKey, setPublicKey] = useState(null);
+  const [keyLoading, setKeyLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Load public key on component mount
+    // Load public key on component mount - REQUIRED for secure authentication
     const loadPublicKey = async () => {
       try {
         const response = await authAPI.getPublicKey();
         setPublicKey(response.data.public_key);
+        setError('');
       } catch (error) {
-        console.warn('Failed to load public key, using plain authentication:', error);
+        console.error('Failed to load encryption key:', error);
+        setError('Unable to establish secure connection. Please refresh the page.');
+      } finally {
+        setKeyLoading(false);
       }
     };
     
@@ -38,17 +43,24 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!publicKey) {
+      setError('Secure connection not available. Please refresh the page.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      // Encrypt data if public key is available
-      let payload = formData;
-      if (publicKey) {
-        payload = await encryptAuthData(formData, publicKey);
+      // Encrypt data - REQUIRED for authentication
+      const encryptedPayload = await encryptAuthData(formData, publicKey);
+      
+      if (!encryptedPayload.data || !encryptedPayload.key) {
+        throw new Error('Failed to encrypt authentication data');
       }
 
-      const response = await authAPI.login(payload);
+      const response = await authAPI.login(encryptedPayload);
       
       if (response.data.status === 'success') {
         // Store tokens and user data
@@ -56,14 +68,14 @@ function Login() {
         localStorage.setItem('refresh_token', response.data.refresh);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         
-        // Redirect to homepage
-        navigate('/');
+        // Redirect to dashboard
+        navigate('/dashboard');
       } else {
         setError(response.data.error || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
-      const errorMessage = error.response?.data?.error || 'Login failed. Please try again.';
+      const errorMessage = error.response?.data?.error || error.message || 'Login failed. Please try again.';
       setError(typeof errorMessage === 'string' ? errorMessage : 'Invalid email or password.');
     } finally {
       setLoading(false);
@@ -76,9 +88,17 @@ function Login() {
         <div className="form-header">
           <Link to="/" className="back-home">← Back to Home</Link>
           <h2>Login to EdgeSync</h2>
-          {publicKey && (
+          {keyLoading ? (
+            <div className="encryption-status loading">
+              🔐 Establishing secure connection...
+            </div>
+          ) : publicKey ? (
             <div className="encryption-status">
-              🔒 Secure connection enabled
+              🔒 Secure connection established
+            </div>
+          ) : (
+            <div className="encryption-status error">
+              ❌ Secure connection failed
             </div>
           )}
         </div>
@@ -99,7 +119,7 @@ function Login() {
               value={formData.email}
               onChange={handleChange}
               required
-              disabled={loading}
+              disabled={loading || !publicKey}
             />
           </div>
           <div className="form-group">
@@ -111,11 +131,11 @@ function Login() {
               value={formData.password}
               onChange={handleChange}
               required
-              disabled={loading}
+              disabled={loading || !publicKey}
             />
           </div>
-          <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+          <button type="submit" className="login-btn" disabled={loading || !publicKey || keyLoading}>
+            {keyLoading ? 'Initializing...' : loading ? 'Authenticating...' : 'Secure Login'}
           </button>
         </form>
         <p className="signup-link">
