@@ -1,9 +1,26 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import './Homepage.css';
 import NavBar from './components/NavBar';
 
 function Homepage() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkAuthStatus = () => {
+      const accessToken = localStorage.getItem('access_token');
+      const user = localStorage.getItem('user');
+      
+      if (accessToken && user) {
+        // User is logged in, redirect to dashboard
+        navigate('/dashboard');
+      }
+    };
+
+    checkAuthStatus();
+  }, [navigate]);
+
   const features = [
     {
       title: "Edge Device Management",

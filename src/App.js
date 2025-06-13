@@ -16,6 +16,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/flow-editor" element={<FlowEditor />} />
+        <Route path="/flow-editor/:flowId" element={<FlowEditor />} />
       </Routes>
     </Router>
   );

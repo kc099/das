@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   ReactFlow,
   Controls,
@@ -15,6 +16,7 @@ import CustomNode from './components/CustomNode';
 import CommentNode from './components/CommentNode';
 import PropertiesPanel from './components/PropertiesPanel';
 import { nodeCategories, defaultFlowData, flowMetadata } from './data/nodeTypes';
+import { flowAPI } from './services/api';
 import './FlowEditor.css';
 
 const nodeTypes = {
@@ -28,13 +30,49 @@ const nodeTypes = {
 };
 
 function FlowEditor() {
+  const navigate = useNavigate();
+  const { flowId } = useParams();
   const [nodes, setNodes, onNodesChange] = useNodesState(defaultFlowData.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(defaultFlowData.edges);
   const [flowMeta, setFlowMeta] = useState(flowMetadata);
   const [selectedNode, setSelectedNode] = useState(null);
   const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
+  const [currentFlowId, setCurrentFlowId] = useState(flowId);
+  const [isLoading, setIsLoading] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('');
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
+
+  // Load flow on component mount or flowId change
+  useEffect(() => {
+    if (flowId) {
+      loadFlowFromAPI(flowId);
+    }
+  }, [flowId]);
+
+  const loadFlowFromAPI = async (id) => {
+    try {
+      setIsLoading(true);
+      const response = await flowAPI.getFlow(id);
+      const flowData = response.data;
+      
+      setNodes(flowData.nodes || []);
+      setEdges(flowData.edges || []);
+      setFlowMeta({
+        name: flowData.name,
+        description: flowData.description,
+        version: flowData.version,
+        tags: flowData.tags,
+        metadata: flowData.metadata
+      });
+      setCurrentFlowId(id);
+    } catch (error) {
+      console.error('Error loading flow:', error);
+      alert('Error loading flow: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
@@ -94,44 +132,101 @@ function FlowEditor() {
   const saveFlow = useCallback(async () => {
     if (!reactFlowInstance) return;
 
-    const flowData = {
-      ...flowMeta,
-      nodes: reactFlowInstance.toObject().nodes,
-      edges: reactFlowInstance.toObject().edges,
-      updatedAt: new Date().toISOString()
-    };
+    try {
+      setSaveStatus('Saving...');
+      const flowData = {
+        name: flowMeta.name,
+        description: flowMeta.description,
+        nodes: reactFlowInstance.toObject().nodes,
+        edges: reactFlowInstance.toObject().edges,
+        metadata: flowMeta.metadata || {},
+        version: flowMeta.version,
+        tags: flowMeta.tags || []
+      };
 
-    // TODO: Implement API call to save flow
-    console.log('Saving flow:', flowData);
-    
-    // For now, save to localStorage
-    localStorage.setItem('savedFlow', JSON.stringify(flowData));
-    alert('Flow saved successfully!');
-  }, [reactFlowInstance, flowMeta]);
+      let response;
+      if (currentFlowId) {
+        // Update existing flow
+        response = await flowAPI.updateFlow(currentFlowId, flowData);
+      } else {
+        // Create new flow
+        response = await flowAPI.createFlow(flowData);
+        setCurrentFlowId(response.data.id);
+        // Update URL to include flow ID
+        navigate(`/flow-editor/${response.data.id}`, { replace: true });
+      }
+      
+      setSaveStatus('Saved!');
+      setTimeout(() => setSaveStatus(''), 2000);
+    } catch (error) {
+      console.error('Error saving flow:', error);
+      setSaveStatus('Error saving');
+      setTimeout(() => setSaveStatus(''), 3000);
+      alert('Error saving flow: ' + (error.response?.data?.detail || error.message));
+    }
+  }, [reactFlowInstance, flowMeta, currentFlowId, navigate]);
 
   const loadFlow = useCallback(() => {
-    const savedFlow = localStorage.getItem('savedFlow');
-    if (savedFlow) {
-      const flowData = JSON.parse(savedFlow);
-      setNodes(flowData.nodes || []);
-      setEdges(flowData.edges || []);
-      setFlowMeta(flowData);
-    }
-  }, [setNodes, setEdges]);
+    // For now, redirect to flow selection/dashboard
+    // TODO: Implement flow selection modal
+    navigate('/dashboard');
+  }, [navigate]);
 
   const clearFlow = useCallback(() => {
     if (window.confirm('Are you sure you want to clear the entire flow?')) {
       setNodes([]);
       setEdges([]);
       setSelectedNode(null);
+      setCurrentFlowId(null);
+      setFlowMeta({
+        name: 'Untitled Flow',
+        description: '',
+        version: '1.0.0',
+        tags: [],
+        metadata: {}
+      });
+      navigate('/flow-editor', { replace: true });
     }
-  }, [setNodes, setEdges]);
+  }, [setNodes, setEdges, navigate]);
+
+  const executeFlow = useCallback(async () => {
+    if (!currentFlowId) {
+      alert('Please save the flow first before executing');
+      return;
+    }
+
+    try {
+      const response = await flowAPI.executeFlow(currentFlowId);
+      alert(`Flow execution started: ${response.data.message}`);
+    } catch (error) {
+      console.error('Error executing flow:', error);
+      alert('Error executing flow: ' + (error.response?.data?.detail || error.message));
+    }
+  }, [currentFlowId]);
+
+  if (isLoading) {
+    return (
+      <div className="flow-editor">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>Loading flow...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flow-editor">
       {/* Header */}
       <header className="flow-header">
         <div className="flow-header-left">
+          <button
+            className="back-to-dashboard"
+            onClick={() => navigate('/dashboard')}
+            title="Back to Dashboard"
+          >
+            ← Dashboard
+          </button>
           <button
             className="palette-toggle"
             onClick={() => setIsPaletteCollapsed(!isPaletteCollapsed)}
@@ -140,6 +235,7 @@ function FlowEditor() {
           </button>
           <h1>Flow Editor</h1>
           <span className="flow-name">{flowMeta.name}</span>
+          {saveStatus && <span className="save-status">{saveStatus}</span>}
         </div>
         <div className="flow-header-right">
           <button onClick={loadFlow} className="btn btn-secondary">
@@ -147,6 +243,9 @@ function FlowEditor() {
           </button>
           <button onClick={saveFlow} className="btn btn-primary">
             Save
+          </button>
+          <button onClick={executeFlow} className="btn btn-success">
+            Execute
           </button>
           <button onClick={clearFlow} className="btn btn-danger">
             Clear
