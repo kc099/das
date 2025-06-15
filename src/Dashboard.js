@@ -6,6 +6,10 @@ import './Dashboard.css';
 function Dashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [organizations, setOrganizations] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  const [devices, setDevices] = useState([]);
   const [stats, setStats] = useState({
     devices: 0,
     sensors: 0,
@@ -37,11 +41,29 @@ function Dashboard() {
           localStorage.setItem('user', JSON.stringify(response.data.user));
         }
 
-        // TODO: Fetch user statistics from sensors API
+        // Fetch organizations
+        const orgResponse = await authAPI.get('/organizations/');
+        if (orgResponse.data.status === 'success') {
+          setOrganizations(orgResponse.data.organizations);
+        }
+
+        // Fetch dashboard templates
+        const templatesResponse = await authAPI.get('/dashboard-templates/');
+        if (templatesResponse.data.status === 'success') {
+          setTemplates(templatesResponse.data.templates);
+        }
+
+        // TODO: Fetch devices from sensors API
         // For now, using mock data
+        setDevices([
+          { id: 1, name: 'ESP32-001', status: 'online', sensors: 5, lastSeen: '2 min ago' },
+          { id: 2, name: 'ESP32-002', status: 'offline', sensors: 3, lastSeen: '1 hour ago' },
+          { id: 3, name: 'ESP32-003', status: 'online', sensors: 7, lastSeen: '30 sec ago' },
+        ]);
+
         setStats({
           devices: 3,
-          sensors: 12,
+          sensors: 15,
           dataPoints: 1247,
           subscriptionType: 'freemium'
         });
@@ -49,7 +71,6 @@ function Dashboard() {
       } catch (error) {
         console.error('Dashboard initialization error:', error);
         if (error.response?.status === 401) {
-          // Token expired or invalid
           localStorage.clear();
           navigate('/login');
         }
@@ -70,11 +91,211 @@ function Dashboard() {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Clear local storage and redirect
       localStorage.clear();
       navigate('/');
     }
   };
+
+  const renderOverview = () => (
+    <div className="tab-content">
+      {/* Stats Overview */}
+      <section className="stats-section">
+        <h2>Overview</h2>
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-icon">🏢</div>
+            <div className="stat-content">
+              <h3>{organizations.length}</h3>
+              <p>Organizations</p>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">🏠</div>
+            <div className="stat-content">
+              <h3>{stats.devices}</h3>
+              <p>Connected Devices</p>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">📊</div>
+            <div className="stat-content">
+              <h3>{templates.length}</h3>
+              <p>Dashboard Templates</p>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">📈</div>
+            <div className="stat-content">
+              <h3>{stats.dataPoints.toLocaleString()}</h3>
+              <p>Data Points</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Actions */}
+      <section className="actions-section">
+        <h2>Quick Actions</h2>
+        <div className="actions-grid">
+          <button className="action-card" onClick={() => navigate('/dashboard-creator')}>
+            <div className="action-icon">📊</div>
+            <div className="action-content">
+              <h3>Dashboard Creator</h3>
+              <p>Create dashboard templates</p>
+            </div>
+          </button>
+          <button className="action-card" onClick={() => navigate('/flow-editor')}>
+            <div className="action-icon">🔗</div>
+            <div className="action-content">
+              <h3>Flow Editor</h3>
+              <p>Create visual flows</p>
+            </div>
+          </button>
+          <button className="action-card" onClick={() => setActiveTab('organizations')}>
+            <div className="action-icon">🏢</div>
+            <div className="action-content">
+              <h3>Manage Organizations</h3>
+              <p>View and manage organizations</p>
+            </div>
+          </button>
+          <button className="action-card" onClick={() => setActiveTab('devices')}>
+            <div className="action-icon">📱</div>
+            <div className="action-content">
+              <h3>Manage Devices</h3>
+              <p>Configure IoT devices</p>
+            </div>
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+
+  const renderOrganizations = () => (
+    <div className="tab-content">
+      <div className="section-header">
+        <h2>Organizations</h2>
+        <button className="create-btn" onClick={() => navigate('/dashboard-creator')}>
+          + Create Organization
+        </button>
+      </div>
+      
+      {organizations.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-icon">🏢</div>
+          <h3>No organizations yet</h3>
+          <p>Create your first organization to get started</p>
+          <button className="create-btn" onClick={() => navigate('/dashboard-creator')}>
+            Create Organization
+          </button>
+        </div>
+      ) : (
+        <div className="items-grid">
+          {organizations.map(org => (
+            <div key={org.id} className="item-card">
+              <div className="item-header">
+                <h3>{org.name}</h3>
+                <span className="item-badge">{org.is_active ? 'Active' : 'Inactive'}</span>
+              </div>
+              <p className="item-description">{org.description}</p>
+              <div className="item-meta">
+                <span>Owner: {org.owner.username}</span>
+                <span>Created: {new Date(org.created_at).toLocaleDateString()}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderTemplates = () => (
+    <div className="tab-content">
+      <div className="section-header">
+        <h2>Dashboard Templates</h2>
+        <button className="create-btn" onClick={() => navigate('/dashboard-creator')}>
+          + Create Template
+        </button>
+      </div>
+      
+      {templates.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-icon">📊</div>
+          <h3>No templates yet</h3>
+          <p>Create your first dashboard template</p>
+          <button className="create-btn" onClick={() => navigate('/dashboard-creator')}>
+            Create Template
+          </button>
+        </div>
+      ) : (
+        <div className="items-grid">
+          {templates.map(template => (
+            <div key={template.id} className="item-card">
+              <div className="item-header">
+                <h3>{template.name}</h3>
+                <span className="item-badge">{template.widgets.length} widgets</span>
+              </div>
+              <p className="item-description">{template.description}</p>
+              <div className="item-meta">
+                <span>Organization: {template.organization.name}</span>
+                <span>Updated: {new Date(template.updated_at).toLocaleDateString()}</span>
+              </div>
+              <div className="item-actions">
+                <button 
+                  className="edit-btn"
+                  onClick={() => navigate('/dashboard-creator')}
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderDevices = () => (
+    <div className="tab-content">
+      <div className="section-header">
+        <h2>IoT Devices</h2>
+        <button className="create-btn">
+          + Add Device
+        </button>
+      </div>
+      
+      {devices.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-icon">📱</div>
+          <h3>No devices connected</h3>
+          <p>Connect your first IoT device to start collecting data</p>
+          <button className="create-btn">
+            Add Device
+          </button>
+        </div>
+      ) : (
+        <div className="items-grid">
+          {devices.map(device => (
+            <div key={device.id} className="item-card">
+              <div className="item-header">
+                <h3>{device.name}</h3>
+                <span className={`item-badge ${device.status}`}>
+                  {device.status === 'online' ? '🟢' : '🔴'} {device.status}
+                </span>
+              </div>
+              <div className="item-meta">
+                <span>Sensors: {device.sensors}</span>
+                <span>Last seen: {device.lastSeen}</span>
+              </div>
+              <div className="item-actions">
+                <button className="edit-btn">Configure</button>
+                <button className="view-btn">View Data</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   if (loading) {
     return (
@@ -121,115 +342,42 @@ function Dashboard() {
         </div>
       </header>
 
+      {/* Navigation Tabs */}
+      <nav className="dashboard-nav">
+        <div className="nav-content">
+          <button 
+            className={`nav-tab ${activeTab === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            📊 Overview
+          </button>
+          <button 
+            className={`nav-tab ${activeTab === 'organizations' ? 'active' : ''}`}
+            onClick={() => setActiveTab('organizations')}
+          >
+            🏢 Organizations
+          </button>
+          <button 
+            className={`nav-tab ${activeTab === 'templates' ? 'active' : ''}`}
+            onClick={() => setActiveTab('templates')}
+          >
+            📋 Templates
+          </button>
+          <button 
+            className={`nav-tab ${activeTab === 'devices' ? 'active' : ''}`}
+            onClick={() => setActiveTab('devices')}
+          >
+            📱 Devices
+          </button>
+        </div>
+      </nav>
+
       {/* Main Content */}
       <main className="dashboard-main">
-        {/* Stats Overview */}
-        <section className="stats-section">
-          <h2>Overview</h2>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon">🏠</div>
-              <div className="stat-content">
-                <h3>{stats.devices}</h3>
-                <p>Connected Devices</p>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">📊</div>
-              <div className="stat-content">
-                <h3>{stats.sensors}</h3>
-                <p>Active Sensors</p>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">📈</div>
-              <div className="stat-content">
-                <h3>{stats.dataPoints.toLocaleString()}</h3>
-                <p>Data Points</p>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">🔐</div>
-              <div className="stat-content">
-                <h3>Encrypted</h3>
-                <p>Secure Connection</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Quick Actions */}
-        <section className="actions-section">
-          <h2>Quick Actions</h2>
-          <div className="actions-grid">
-            <button className="action-card">
-              <div className="action-icon">➕</div>
-              <div className="action-content">
-                <h3>Add Device</h3>
-                <p>Connect a new IoT device</p>
-              </div>
-            </button>
-            <button className="action-card">
-              <div className="action-icon">📱</div>
-              <div className="action-content">
-                <h3>Manage Sensors</h3>
-                <p>Configure sensor settings</p>
-              </div>
-            </button>
-            <button className="action-card">
-              <div className="action-icon">📊</div>
-              <div className="action-content">
-                <h3>View Analytics</h3>
-                <p>Analyze sensor data</p>
-              </div>
-            </button>
-            <button className="action-card" onClick={() => navigate('/flow-editor')}>
-              <div className="action-icon">🔗</div>
-              <div className="action-content">
-                <h3>Flow Editor</h3>
-                <p>Create visual flows</p>
-              </div>
-            </button>
-            <button className="action-card">
-              <div className="action-icon">⚙️</div>
-              <div className="action-content">
-                <h3>Settings</h3>
-                <p>Account and preferences</p>
-              </div>
-            </button>
-          </div>
-        </section>
-
-        {/* Recent Activity */}
-        <section className="activity-section">
-          <h2>Recent Activity</h2>
-          <div className="activity-list">
-            <div className="activity-item">
-              <div className="activity-icon">🔌</div>
-              <div className="activity-content">
-                <h4>Device Connected</h4>
-                <p>ESP32 Temperature Sensor #3 came online</p>
-                <span className="activity-time">2 minutes ago</span>
-              </div>
-            </div>
-            <div className="activity-item">
-              <div className="activity-icon">📊</div>
-              <div className="activity-content">
-                <h4>Data Received</h4>
-                <p>Humidity sensor reported 65% humidity</p>
-                <span className="activity-time">5 minutes ago</span>
-              </div>
-            </div>
-            <div className="activity-item">
-              <div className="activity-icon">⚠️</div>
-              <div className="activity-content">
-                <h4>Alert Triggered</h4>
-                <p>Temperature exceeded threshold (25°C)</p>
-                <span className="activity-time">1 hour ago</span>
-              </div>
-            </div>
-          </div>
-        </section>
+        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'organizations' && renderOrganizations()}
+        {activeTab === 'templates' && renderTemplates()}
+        {activeTab === 'devices' && renderDevices()}
       </main>
     </div>
   );

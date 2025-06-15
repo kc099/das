@@ -86,6 +86,48 @@ export const authAPI = {
   
   // Get user profile
   getProfile: () => api.get('/api/profile/'),
+  
+  // Organization endpoints
+  get: (endpoint) => api.get(`/api${endpoint}`),
+  post: (endpoint, data) => api.post(`/api${endpoint}`, data),
+  put: (endpoint, data) => api.put(`/api${endpoint}`, data),
+  delete: (endpoint) => api.delete(`/api${endpoint}`),
+};
+
+// Organization API endpoints
+export const organizationAPI = {
+  // Get all organizations for the authenticated user
+  getOrganizations: () => api.get('/api/organizations/'),
+  
+  // Get a specific organization by ID
+  getOrganization: (id) => api.get(`/api/organizations/${id}/`),
+  
+  // Create a new organization
+  createOrganization: (orgData) => api.post('/api/organizations/', orgData),
+  
+  // Update an existing organization
+  updateOrganization: (id, orgData) => api.put(`/api/organizations/${id}/`, orgData),
+  
+  // Delete an organization
+  deleteOrganization: (id) => api.delete(`/api/organizations/${id}/`),
+};
+
+// Dashboard Template API endpoints
+export const dashboardAPI = {
+  // Get all dashboard templates for the authenticated user
+  getTemplates: () => api.get('/api/dashboard-templates/'),
+  
+  // Get a specific template by ID
+  getTemplate: (id) => api.get(`/api/dashboard-templates/${id}/`),
+  
+  // Create a new dashboard template
+  createTemplate: (templateData) => api.post('/api/dashboard-templates/', templateData),
+  
+  // Update an existing template
+  updateTemplate: (id, templateData) => api.put(`/api/dashboard-templates/${id}/`, templateData),
+  
+  // Delete a template
+  deleteTemplate: (id) => api.delete(`/api/dashboard-templates/${id}/`),
 };
 
 // Flow API endpoints

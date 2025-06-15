@@ -43,14 +43,7 @@ function FlowEditor() {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
-  // Load flow on component mount or flowId change
-  useEffect(() => {
-    if (flowId) {
-      loadFlowFromAPI(flowId);
-    }
-  }, [flowId]);
-
-  const loadFlowFromAPI = async (id) => {
+  const loadFlowFromAPI = useCallback(async (id) => {
     try {
       setIsLoading(true);
       const response = await flowAPI.getFlow(id);
@@ -72,7 +65,14 @@ function FlowEditor() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [setNodes, setEdges, setFlowMeta, setCurrentFlowId, setIsLoading]);
+
+  // Load flow on component mount or flowId change
+  useEffect(() => {
+    if (flowId) {
+      loadFlowFromAPI(flowId);
+    }
+  }, [flowId, loadFlowFromAPI]);
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),

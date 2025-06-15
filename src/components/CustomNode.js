@@ -10,57 +10,7 @@ function CustomNode({ data, selected }) {
     return IconComponent ? <IconComponent size={12} /> : <Icons.Circle size={12} />;
   };
 
-  const getEssentialConfig = (data) => {
-    const { category, nodeType, config } = data;
-    
-    if (!config) return null;
 
-    // Define what to show for each node type
-    const essentialKeys = {
-      // Input nodes
-      button: ['text'],
-      slider: ['value'],
-      text: ['placeholder'],
-      number: ['value'],
-      
-      // Output nodes
-      digital: ['state'],
-      analog: ['value'],
-      display: ['format'],
-      
-      // Function nodes
-      movingAverage: ['windowSize'],
-      min: ['windowSize'],
-      max: ['windowSize'],
-      customPython: [], // Show nothing, too complex
-      
-      // Network nodes
-      mqtt: ['topic'],
-      http: ['method'],
-      websocket: ['url'],
-      
-      // Storage nodes
-      mysql: ['database'],
-      postgres: ['database']
-    };
-
-    const keys = essentialKeys[nodeType] || essentialKeys[data.subtype] || [];
-    if (keys.length === 0) return null;
-
-    return keys.slice(0, 1).map(key => {
-      if (!config[key]) return null;
-      const value = config[key];
-      const displayValue = typeof value === 'string' && value.length > 20 
-        ? value.substring(0, 20) + '...' 
-        : String(value);
-      
-      return (
-        <div key={key} className="config-item">
-          <span className="config-value-only">{displayValue}</span>
-        </div>
-      );
-    }).filter(Boolean);
-  };
 
   const getCategoryInfo = () => {
     const category = nodeCategories[data.category];
