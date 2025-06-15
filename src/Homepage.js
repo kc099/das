@@ -14,7 +14,7 @@ function Homepage() {
       
       if (accessToken && user) {
         // User is logged in, redirect to dashboard
-        navigate('/dashboard');
+        navigate('/home');
       }
     };
 

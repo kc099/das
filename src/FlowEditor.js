@@ -169,7 +169,7 @@ function FlowEditor() {
   const loadFlow = useCallback(() => {
     // For now, redirect to flow selection/dashboard
     // TODO: Implement flow selection modal
-    navigate('/dashboard');
+    navigate('/home');
   }, [navigate]);
 
   const clearFlow = useCallback(() => {
@@ -222,10 +222,10 @@ function FlowEditor() {
         <div className="flow-header-left">
           <button
             className="back-to-dashboard"
-            onClick={() => navigate('/dashboard')}
-            title="Back to Dashboard"
+            onClick={() => navigate('/home')}
+            title="Back to Home"
           >
-            ← Dashboard
+            ← Home
           </button>
           <button
             className="palette-toggle"

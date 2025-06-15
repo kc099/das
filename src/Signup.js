@@ -91,7 +91,7 @@ function Signup() {
         localStorage.setItem('user', JSON.stringify(response.data.user));
         
         // Redirect to dashboard
-        navigate('/dashboard');
+        navigate('/home');
       } else {
         setError(response.data.error || 'Signup failed');
       }

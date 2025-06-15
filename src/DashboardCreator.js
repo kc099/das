@@ -6,6 +6,11 @@ import { authAPI } from './services/api';
 import WidgetFactory from './components/widgets/WidgetFactory';
 import './DashboardCreator.css';
 import './components/widgets/Widgets.css';
+import GridLayout from 'react-grid-layout';
+import { WidthProvider } from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
+const ReactGridLayout = WidthProvider(GridLayout);
 
 // Draggable Widget Item Component
 const DraggableWidget = ({ widget, onDrag }) => {
@@ -283,34 +288,43 @@ function DashboardCreator() {
   };
 
   const handleWidgetDrop = (widgetType) => {
-    // Use functional state update to always work with the latest template
     setCurrentTemplate(prevTemplate => {
       if (!prevTemplate) return prevTemplate; // Safety check
 
-      // Calculate grid position for new widget based on current number of widgets
-      const gridCols = 4; // 4-column grid
-      const existingWidgets = prevTemplate.widgets.length;
-      const gridX = existingWidgets % gridCols; // Column position (0-3)
-      const gridY = Math.floor(existingWidgets / gridCols); // Row position
+      const COLS = 12; // 12-column grid like Grafana
+      const DEFAULT_W = 4; // default width in grid units
+      const DEFAULT_H = 6; // default height (rows)
 
+      const existingWidgets = prevTemplate.widgets.length;
+      const x = (existingWidgets * DEFAULT_W) % COLS; // place next to previous
+
+      const widgetId = `widget_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Create widget definition
       const newWidget = {
-        id: `widget_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: widgetId,
         type: widgetType.value,
         title: `${widgetType.label} Widget`,
         query: '',
         datasource: 'mysql',
-        config: {},
-        gridPosition: {
-          x: gridX,
-          y: gridY,
-          width: 1,
-          height: 1
-        }
+        config: {}
+      };
+
+      // Create corresponding layout item
+      const newLayoutItem = {
+        i: widgetId,
+        x,
+        y: Infinity, // put at the bottom automatically
+        w: DEFAULT_W,
+        h: DEFAULT_H,
+        minW: 2,
+        minH: 4
       };
 
       return {
         ...prevTemplate,
-        widgets: [...prevTemplate.widgets, newWidget]
+        widgets: [...prevTemplate.widgets, newWidget],
+        layout: [...(prevTemplate.layout || []), newLayoutItem]
       };
     });
   };
@@ -343,6 +357,14 @@ function DashboardCreator() {
     }
   };
 
+  // Update template layout when widgets are moved or resized
+  const handleLayoutChange = (newLayout) => {
+    setCurrentTemplate(prev => {
+      if (!prev) return prev;
+      return { ...prev, layout: newLayout };
+    });
+  };
+
   const handleEditTemplate = async (template) => {
     try {
       // Use template from list directly - no API call
@@ -365,9 +387,19 @@ function DashboardCreator() {
         return widget;
       });
       
+      const existingLayout = template.layout && template.layout.length ? template.layout : widgetsWithPositions.map((w, idx) => ({
+        i: w.id,
+        x: (idx * 4) % 12,
+        y: Infinity,
+        w: 4,
+        h: 6,
+        minW: 2,
+        minH: 4
+      }));
       const templateWithPositions = {
         ...template,
-        widgets: widgetsWithPositions
+        widgets: widgetsWithPositions,
+        layout: existingLayout
       };
       
       setCurrentTemplate(templateWithPositions);
@@ -412,8 +444,8 @@ function DashboardCreator() {
         {/* Header */}
         <header className="creator-header">
           <div className="header-left">
-            <button className="back-btn" onClick={() => navigate('/dashboard')}>
-              ← Back to Dashboard
+            <button className="back-btn" onClick={() => navigate('/home')}>
+              ← Back to Home
             </button>
             <h1>Dashboard Creator</h1>
             {currentTemplate && (
@@ -543,72 +575,43 @@ function DashboardCreator() {
                       <p>Select widgets from the library on the left and drop them here</p>
                     </div>
                   ) : (
-                    <div className="widgets-grid" style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(4, 1fr)',
-                      gap: '20px',
-                      padding: '20px',
-                      minHeight: '400px'
-                    }}>
+                    <ReactGridLayout
+                      className="widgets-grid"
+                      layout={currentTemplate.layout || []}
+                      cols={12}
+                      rowHeight={30}
+                      compactType="vertical"
+                      isResizable
+                      isDraggable
+                      draggableHandle=".widget-header"
+                      onLayoutChange={handleLayoutChange}
+                      style={{ padding: '20px', width: '100%' }}
+                    >
                       {currentTemplate.widgets.map((widget, index) => (
-                          <div 
-                            key={widget.id} 
-                            className="widget-container-item"
-                            style={{
-                              gridColumn: widget.gridPosition ? widget.gridPosition.x + 1 : (index % 4) + 1,
-                              gridRow: widget.gridPosition ? widget.gridPosition.y + 1 : Math.floor(index / 4) + 1,
-                              width: '100%',
-                              height: '200px',
-                              padding: '10px',
-                              border: '2px solid #e2e8f0',
-                              borderRadius: '8px',
-                              background: 'white',
-                              position: 'relative'
-                            }}
-                            title={`Widget ${index + 1}: ${widget.id}`}
-                          >
-                            <div style={{ 
-                              position: 'absolute', 
-                              top: '5px', 
-                              right: '5px', 
-                              zIndex: 10 
-                            }}>
-                              <button 
-                                onClick={() => handleDeleteWidget(widget.id)}
-                                style={{
-                                  background: '#ef4444',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '50%',
-                                  width: '24px',
-                                  height: '24px',
-                                  cursor: 'pointer',
-                                  fontSize: '14px'
-                                }}
-                              >
-                                ×
-                              </button>
-                            </div>
-                            <div style={{ height: '100%', overflow: 'hidden' }}>
-                              <div style={{ 
-                                position: 'absolute', 
-                                top: '30px', 
-                                left: '5px', 
-                                background: 'rgba(0,0,0,0.7)', 
-                                color: 'white', 
-                                padding: '2px 6px', 
-                                borderRadius: '3px', 
-                                fontSize: '10px',
-                                zIndex: 5
-                              }}>
-                                #{index + 1}
-                              </div>
-                              <WidgetFactory widget={widget} />
-                            </div>
+                        <div key={widget.id} className="widget-container-item" data-grid={currentTemplate.layout?.find(l => l.i === widget.id)}>
+                          <div style={{ position: 'absolute', top: '5px', right: '5px', zIndex: 10 }}>
+                            <button 
+                              onClick={() => handleDeleteWidget(widget.id)}
+                              style={{
+                                background: '#ef4444',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '24px',
+                                height: '24px',
+                                cursor: 'pointer',
+                                fontSize: '14px'
+                              }}
+                            >
+                              ×
+                            </button>
                           </div>
-                        )
-                      )}
-                    </div>
+                          <div style={{ height: '100%', overflow: 'hidden' }}>
+                            <WidgetFactory widget={widget} />
+                          </div>
+                        </div>
+                      ))}
+                    </ReactGridLayout>
                   )}
                 </DropZone>
               </div>

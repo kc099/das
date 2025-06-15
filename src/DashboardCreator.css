@@ -327,9 +327,10 @@
 }
 
 .widgets-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 1.5rem;
+  display: block !important;
+  position: relative;
+  padding: 20px;
+  width: 100%;
   min-height: 400px;
 }
 
@@ -780,7 +781,8 @@
 .editor-canvas {
   flex: 1;
   position: relative;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: #fafbfc;
 }
 
@@ -798,15 +800,16 @@
   min-height: 400px;
 }
 
-.widgets-grid {
-  padding: 20px;
-  min-height: 400px;
-  width: 100%;
-}
-
 .widget-container-item {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease;
+  height: 100%;
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  position: relative;
 }
 
 .widget-container-item:hover {

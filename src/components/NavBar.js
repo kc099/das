@@ -42,14 +42,14 @@ function NavBar() {
     <nav className="navbar">
       <div className="nav-container">
         <div className="nav-logo">
-          <Link to={isAuthenticated ? "/dashboard" : "/"}>
+          <Link to={isAuthenticated ? "/home" : "/"}>
             <h2>EdgeSync</h2>
           </Link>
         </div>
         <div className="nav-links">
           {isAuthenticated ? (
             <>
-              <Link to="/dashboard" className="nav-link">Dashboard</Link>
+              <Link to="/home" className="nav-link">Home</Link>
               <Link to="/flow-editor" className="nav-link">Flow Editor</Link>
               <span className="nav-user">Welcome, {user?.username || user?.email}</span>
               <button onClick={handleLogout} className="btn btn-outline">Logout</button>
