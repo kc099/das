@@ -2,21 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Responsive, WidthProvider } from 'react-grid-layout';
 import { authAPI } from './services/api';
 import WidgetFactory from './components/widgets/WidgetFactory';
 import './DashboardCreator.css';
 import './components/widgets/Widgets.css';
-import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
-
-const ResponsiveGridLayout = WidthProvider(Responsive);
 
 // Draggable Widget Item Component
 const DraggableWidget = ({ widget, onDrag }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'widget',
-    item: { widget },
+    item: { widgetType: widget },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -41,7 +36,9 @@ const DraggableWidget = ({ widget, onDrag }) => {
 const DropZone = ({ onDrop, children, isEmpty }) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'widget',
-    drop: (item) => onDrop(item.widget),
+    drop: (item) => {
+      onDrop(item.widgetType);
+    },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
     }),
@@ -286,43 +283,36 @@ function DashboardCreator() {
   };
 
   const handleWidgetDrop = (widgetType) => {
-    if (!currentTemplate) return;
+    // Use functional state update to always work with the latest template
+    setCurrentTemplate(prevTemplate => {
+      if (!prevTemplate) return prevTemplate; // Safety check
 
-    const newWidget = {
-      id: `widget_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: widgetType.value,
-      title: `${widgetType.label} Widget`,
-      query: '',
-      datasource: 'mysql',
-      config: {}
-    };
+      // Calculate grid position for new widget based on current number of widgets
+      const gridCols = 4; // 4-column grid
+      const existingWidgets = prevTemplate.widgets.length;
+      const gridX = existingWidgets % gridCols; // Column position (0-3)
+      const gridY = Math.floor(existingWidgets / gridCols); // Row position
 
-    // Calculate position for new widget
-    const existingWidgets = currentTemplate.widgets.length;
-    const newLayout = {
-      i: newWidget.id,
-      x: (existingWidgets * 6) % 12, // Place widgets side by side, wrapping at 12 columns
-      y: Math.floor((existingWidgets * 6) / 12) * 4, // Move to next row when needed
-      w: 6,
-      h: 4,
-      minW: 2,
-      minH: 2
-    };
+      const newWidget = {
+        id: `widget_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: widgetType.value,
+        title: `${widgetType.label} Widget`,
+        query: '',
+        datasource: 'mysql',
+        config: {},
+        gridPosition: {
+          x: gridX,
+          y: gridY,
+          width: 1,
+          height: 1
+        }
+      };
 
-    setCurrentTemplate({
-      ...currentTemplate,
-      widgets: [...currentTemplate.widgets, newWidget],
-      layout: [...(currentTemplate.layout || []), newLayout]
+      return {
+        ...prevTemplate,
+        widgets: [...prevTemplate.widgets, newWidget]
+      };
     });
-  };
-
-  const handleLayoutChange = (layout) => {
-    if (currentTemplate) {
-      setCurrentTemplate({
-        ...currentTemplate,
-        layout: layout
-      });
-    }
   };
 
   const handleSaveTemplate = async () => {
@@ -330,7 +320,6 @@ function DashboardCreator() {
       try {
         const response = await authAPI.put(`/dashboard-templates/${currentTemplate.id}/`, currentTemplate);
         if (response.data.status === 'success') {
-          setTemplates(templates.map(t => t.id === currentTemplate.id ? response.data.template : t));
           alert('Template saved successfully!');
         }
       } catch (error) {
@@ -342,22 +331,68 @@ function DashboardCreator() {
 
   const handleDeleteWidget = (widgetId) => {
     if (currentTemplate) {
-      setCurrentTemplate({
+      const updatedTemplate = {
         ...currentTemplate,
         widgets: currentTemplate.widgets.filter(w => w.id !== widgetId),
-        layout: currentTemplate.layout.filter(l => l.i !== widgetId)
-      });
+        layout: (currentTemplate.layout || []).filter(l => l.i !== widgetId)
+      };
+
+      // Update state immediately (frontend only)
+      setCurrentTemplate(updatedTemplate);
+      console.log('Widget deleted (frontend only)');
     }
   };
 
-  const handleEditTemplate = (template) => {
-    setCurrentTemplate(template);
-    setIsEditing(true);
+  const handleEditTemplate = async (template) => {
+    try {
+      // Use template from list directly - no API call
+      console.log('Using template from list directly (no API call)');
+      
+      // Ensure all widgets have grid positions for backward compatibility
+      const widgetsWithPositions = template.widgets.map((widget, index) => {
+        if (!widget.gridPosition) {
+          const gridCols = 4;
+          return {
+            ...widget,
+            gridPosition: {
+              x: index % gridCols,
+              y: Math.floor(index / gridCols),
+              width: 1,
+              height: 1
+            }
+          };
+        }
+        return widget;
+      });
+      
+      const templateWithPositions = {
+        ...template,
+        widgets: widgetsWithPositions
+      };
+      
+      setCurrentTemplate(templateWithPositions);
+      setIsEditing(true);
+    } catch (error) {
+      console.error('Error fetching latest template data:', error);
+      // Fallback to the template from list
+      setCurrentTemplate(template);
+      setIsEditing(true);
+    }
   };
 
-  const handleBackToList = () => {
+  const handleBackToList = async () => {
     setCurrentTemplate(null);
     setIsEditing(false);
+    
+    // Refresh templates to get latest data
+    try {
+      const templatesResponse = await authAPI.get('/dashboard-templates/');
+      if (templatesResponse.data.status === 'success') {
+        setTemplates(templatesResponse.data.templates);
+      }
+    } catch (error) {
+      console.error('Error refreshing templates:', error);
+    }
   };
 
   if (loading) {
@@ -376,57 +411,55 @@ function DashboardCreator() {
       <div className="dashboard-creator-container">
         {/* Header */}
         <header className="creator-header">
-          <div className="header-content">
-            <div className="header-left">
-              <button className="back-btn" onClick={() => navigate('/dashboard')}>
-                ← Back to Dashboard
-              </button>
-              <h1>Dashboard Creator</h1>
-              {currentTemplate && (
-                <span className="current-template">Editing: {currentTemplate.name}</span>
-              )}
-            </div>
-            <div className="header-right">
-              {!isEditing && (
-                <>
-                  <div className="org-controls">
-                    <select 
-                      value={selectedOrg} 
-                      onChange={(e) => setSelectedOrg(e.target.value)}
-                      className="org-selector"
-                    >
-                      {organizations.map(org => (
-                        <option key={org.id} value={org.id}>{org.name}</option>
-                      ))}
-                    </select>
-                    <button 
-                      className="create-org-btn"
-                      onClick={() => setShowCreateOrgModal(true)}
-                      title="Create New Organization"
-                    >
-                      + Org
-                    </button>
-                  </div>
-                  <button 
-                    className="create-btn"
-                    onClick={() => setShowCreateModal(true)}
-                    disabled={!selectedOrg}
+          <div className="header-left">
+            <button className="back-btn" onClick={() => navigate('/dashboard')}>
+              ← Back to Dashboard
+            </button>
+            <h1>Dashboard Creator</h1>
+            {currentTemplate && (
+              <span className="current-template">Editing: {currentTemplate.name}</span>
+            )}
+          </div>
+          <div className="header-right">
+            {!isEditing && (
+              <>
+                <div className="org-controls">
+                  <select 
+                    value={selectedOrg} 
+                    onChange={(e) => setSelectedOrg(e.target.value)}
+                    className="org-selector"
                   >
-                    + New Template
+                    {organizations.map(org => (
+                      <option key={org.id} value={org.id}>{org.name}</option>
+                    ))}
+                  </select>
+                  <button 
+                    className="create-org-btn"
+                    onClick={() => setShowCreateOrgModal(true)}
+                    title="Create New Organization"
+                  >
+                    + Org
                   </button>
-                </>
-              )}
-              {isEditing && (
-                <>
-                  <button className="save-btn" onClick={handleSaveTemplate}>
-                    💾 Save Template
-                  </button>
-                  <button className="back-btn" onClick={handleBackToList}>
-                    ← Back to List
-                  </button>
-                </>
-              )}
-            </div>
+                </div>
+                <button 
+                  className="create-btn"
+                  onClick={() => setShowCreateModal(true)}
+                  disabled={!selectedOrg}
+                >
+                  + New Template
+                </button>
+              </>
+            )}
+            {isEditing && (
+              <>
+                <button className="save-btn" onClick={handleSaveTemplate}>
+                  💾 Save Template
+                </button>
+                <button className="back-btn" onClick={handleBackToList}>
+                  ← Back to List
+                </button>
+              </>
+            )}
           </div>
         </header>
 
@@ -502,31 +535,80 @@ function DashboardCreator() {
                   onDrop={handleWidgetDrop}
                   isEmpty={!currentTemplate?.widgets?.length}
                 >
-                  {currentTemplate?.widgets?.length > 0 && (
-                    <ResponsiveGridLayout
-                      className="layout"
-                      layouts={{ lg: currentTemplate.layout }}
-                      breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-                      cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-                      rowHeight={60}
-                      onLayoutChange={handleLayoutChange}
-                      isDraggable={true}
-                      isResizable={true}
-                    >
-                      {currentTemplate.widgets.map(widget => (
-                        <div key={widget.id} className="grid-item">
-                          <div className="widget-controls">
-                            <button 
-                              className="delete-widget-btn"
-                              onClick={() => handleDeleteWidget(widget.id)}
-                            >
-                              ×
-                            </button>
+                  
+                  {!currentTemplate?.widgets?.length ? (
+                    <div className="drop-zone-placeholder">
+                      <div className="placeholder-icon">📊</div>
+                      <h3>Drag widgets here to build your dashboard</h3>
+                      <p>Select widgets from the library on the left and drop them here</p>
+                    </div>
+                  ) : (
+                    <div className="widgets-grid" style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, 1fr)',
+                      gap: '20px',
+                      padding: '20px',
+                      minHeight: '400px'
+                    }}>
+                      {currentTemplate.widgets.map((widget, index) => (
+                          <div 
+                            key={widget.id} 
+                            className="widget-container-item"
+                            style={{
+                              gridColumn: widget.gridPosition ? widget.gridPosition.x + 1 : (index % 4) + 1,
+                              gridRow: widget.gridPosition ? widget.gridPosition.y + 1 : Math.floor(index / 4) + 1,
+                              width: '100%',
+                              height: '200px',
+                              padding: '10px',
+                              border: '2px solid #e2e8f0',
+                              borderRadius: '8px',
+                              background: 'white',
+                              position: 'relative'
+                            }}
+                            title={`Widget ${index + 1}: ${widget.id}`}
+                          >
+                            <div style={{ 
+                              position: 'absolute', 
+                              top: '5px', 
+                              right: '5px', 
+                              zIndex: 10 
+                            }}>
+                              <button 
+                                onClick={() => handleDeleteWidget(widget.id)}
+                                style={{
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '24px',
+                                  height: '24px',
+                                  cursor: 'pointer',
+                                  fontSize: '14px'
+                                }}
+                              >
+                                ×
+                              </button>
+                            </div>
+                            <div style={{ height: '100%', overflow: 'hidden' }}>
+                              <div style={{ 
+                                position: 'absolute', 
+                                top: '30px', 
+                                left: '5px', 
+                                background: 'rgba(0,0,0,0.7)', 
+                                color: 'white', 
+                                padding: '2px 6px', 
+                                borderRadius: '3px', 
+                                fontSize: '10px',
+                                zIndex: 5
+                              }}>
+                                #{index + 1}
+                              </div>
+                              <WidgetFactory widget={widget} />
+                            </div>
                           </div>
-                          <WidgetFactory widget={widget} />
-                        </div>
-                      ))}
-                    </ResponsiveGridLayout>
+                        )
+                      )}
+                    </div>
                   )}
                 </DropZone>
               </div>
