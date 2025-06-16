@@ -129,56 +129,63 @@ class CacheService {
   // Fetch MQTT clusters summary
   async getMqttClusters() {
     return this.get('mqttClusters', async () => {
-      const [infoResponse, clustersResponse] = await Promise.all([
-        mqttAPI.getInfo(),
-        mqttAPI.clusters.list()
-      ]);
+      try {
+        // Get ALL clusters (both hosted and external) from the database
+        const clustersResponse = await mqttAPI.clusters.list();
+        const clusters = [];
 
-      const clusters = [];
-      
-      // Add hosted cluster if user has credentials (but don't cache passwords)
-      if (infoResponse.data.hasPassword && infoResponse.data.username) {
-        clusters.push({
-          id: 'hosted',
-          name: 'Free #1',
-          host: infoResponse.data.broker.host,
-          port: infoResponse.data.broker.port,
-          cluster_type: 'hosted',
-          // Don't cache credentials or detailed config
-        });
+        // All clusters now come from the database with UUIDs
+        if (clustersResponse.data && Array.isArray(clustersResponse.data)) {
+          clusters.push(...clustersResponse.data.map(cluster => ({
+            id: cluster.uuid,
+            uuid: cluster.uuid,
+            name: cluster.name,
+            host: cluster.host,
+            port: cluster.port,
+            username: cluster.username,
+            password: cluster.password,
+            cluster_type: cluster.cluster_type,
+            created_at: cluster.created_at,
+          })));
+        }
+
+        return {
+          count: clusters.length,
+          clusters: clusters
+        };
+      } catch (error) {
+        console.error('Error fetching MQTT clusters:', error);
+        // Return empty clusters list instead of failing
+        return {
+          count: 0,
+          clusters: []
+        };
       }
-
-      // Add external clusters (summary only)
-      clusters.push(...clustersResponse.data.map(cluster => ({
-        id: cluster.uuid,
-        uuid: cluster.uuid,
-        name: cluster.name,
-        host: cluster.host,
-        port: cluster.port,
-        cluster_type: cluster.cluster_type,
-        created_at: cluster.created_at,
-        // Don't cache credentials
-      })));
-
-      return {
-        count: clusters.length,
-        clusters: clusters
-      };
     });
   }
 
   // Fetch MQTT connection info (lightweight)
   async getMqttInfo() {
     return this.get('mqttInfo', async () => {
-      const response = await mqttAPI.getInfo();
-      // Cache only connection status, not credentials
-      return {
-        hasPassword: response.data.hasPassword,
-        username: response.data.username,
-        broker: response.data.broker,
-        connected: response.data.connected,
-        // Don't cache actual passwords or sensitive details
-      };
+      try {
+        const response = await mqttAPI.getInfo();
+        // Cache only connection status, not credentials
+        return {
+          hasPassword: response.data.hasPassword,
+          username: response.data.username,
+          broker: response.data.broker,
+          connected: response.data.connected,
+        };
+      } catch (error) {
+        console.log('Could not load MQTT info:', error);
+        // Return default values
+        return {
+          hasPassword: false,
+          username: null,
+          broker: { host: '13.203.165.247', port: 1883 },
+          connected: false,
+        };
+      }
     });
   }
 

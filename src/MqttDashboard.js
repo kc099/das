@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { mqttAPI } from './services/api';
 import cacheService from './services/cache';
 import './Dashboard.css'; // reuse core styles
 import './MqttDashboard.css';
-import mqtt from 'mqtt';
+
 
 function MqttDashboard() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [clusters, setClusters] = useState([]);
+  const [currentCluster, setCurrentCluster] = useState(null);
   const [info, setInfo] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('Not Connected');
   const [testRunning, setTestRunning] = useState(false);
@@ -27,45 +29,78 @@ function MqttDashboard() {
   useEffect(() => {
     const loadAll = async () => {
       try {
-        // Fetch fresh credentials data when user opens dashboard 
-        const res = await mqttAPI.getInfo();
-        setInfo(res.data);
-        const hosted={id:'hosted',name:'Serverless',host:res.data.broker.host,port:res.data.broker.port,type:'hosted'};
-        setClusters([hosted]);
+        // Get cluster UUID from URL
+        const clusterUuid = searchParams.get('cluster');
+        
+        if (clusterUuid) {
+          // Load specific cluster by UUID
+          const clusterRes = await mqttAPI.clusters.get(clusterUuid);
+          const cluster = clusterRes.data;
+          setCurrentCluster({
+            id: cluster.uuid,
+            uuid: cluster.uuid,
+            name: cluster.name,
+            host: cluster.host,
+            port: cluster.port,
+            username: cluster.username,
+            password: cluster.password,
+            cluster_type: cluster.cluster_type
+          });
+        } else {
+          // Fallback: load first available cluster
+          const clustersRes = await mqttAPI.clusters.list();
+          if (clustersRes.data && clustersRes.data.length > 0) {
+            const cluster = clustersRes.data[0];
+            setCurrentCluster({
+              id: cluster.uuid,
+              uuid: cluster.uuid,
+              name: cluster.name,
+              host: cluster.host,
+              port: cluster.port,
+              username: cluster.username,
+              password: cluster.password,
+              cluster_type: cluster.cluster_type
+            });
+          }
+        }
         
         // Fetch fresh ACLs (sensitive data, not cached)
         const aclRes = await mqttAPI.listAcls();
         setAcls(aclRes.data);
         
-        // Use cached statistics (non-sensitive, frequently updated data)
-        const statsData = await cacheService.getMqttStats();
-        setStats({
-          topics: statsData.topics,
-          messages: statsData.messages,
-          subscriptions: statsData.subscriptions,
-          activities: statsData.activities,
-          traffic: {
-            today: statsData.traffic.today_kb >= 1024 ? 
-              `${(statsData.traffic.today_kb / 1024).toFixed(1)} MB` : 
-              `${statsData.traffic.today_kb} KB`,
-            week: statsData.traffic.week_kb >= 1024 ? 
-              `${(statsData.traffic.week_kb / 1024).toFixed(1)} MB` : 
-              `${statsData.traffic.week_kb} KB`,
-            lifetime: statsData.traffic.lifetime_kb >= 1024 * 1024 ? 
-              `${(statsData.traffic.lifetime_kb / 1024 / 1024).toFixed(1)} GB` : 
-              statsData.traffic.lifetime_kb >= 1024 ? 
-              `${(statsData.traffic.lifetime_kb / 1024).toFixed(1)} MB` : 
-              `${statsData.traffic.lifetime_kb} KB`
-          }
-        });
+        // Load stats if available (will fail gracefully)
+        try {
+          const statsData = await cacheService.getMqttStats();
+          setStats({
+            topics: statsData.topics || 0,
+            messages: statsData.messages || 0,
+            subscriptions: statsData.subscriptions || 0,
+            activities: statsData.activities || [],
+            traffic: {
+              today: statsData.traffic?.today_kb >= 1024 ? 
+                `${(statsData.traffic.today_kb / 1024).toFixed(1)} MB` : 
+                `${statsData.traffic?.today_kb || 0} KB`,
+              week: statsData.traffic?.week_kb >= 1024 ? 
+                `${(statsData.traffic.week_kb / 1024).toFixed(1)} MB` : 
+                `${statsData.traffic?.week_kb || 0} KB`,
+              lifetime: statsData.traffic?.lifetime_kb >= 1024 * 1024 ? 
+                `${(statsData.traffic.lifetime_kb / 1024 / 1024).toFixed(1)} GB` : 
+                statsData.traffic?.lifetime_kb >= 1024 ? 
+                `${(statsData.traffic.lifetime_kb / 1024).toFixed(1)} MB` : 
+                `${statsData.traffic?.lifetime_kb || 0} KB`
+            }
+          });
+        } catch (statsErr) {
+          console.log('Stats not available:', statsErr);
+        }
       } catch(err){
-        console.error(err);
+        console.error('Error loading dashboard:', err);
       }
     };
     loadAll();
-  }, []);
+  }, [searchParams]);
 
-  const currentCluster = clusters[0];
+
 
   const testConnection = async () => {
     if (!currentCluster) {
@@ -77,72 +112,54 @@ function MqttDashboard() {
     setConnectionStatus('🔄 Testing...');
     
     try {
-      // Try multiple connection methods and protocols
-      const protocols = [
-        { url: `wss://${currentCluster.host}:${currentCluster.port + 1}/mqtt`, name: 'WSS' },
-        { url: `ws://${currentCluster.host}:${currentCluster.port + 1}/mqtt`, name: 'WS' },
-        { url: `mqtt://${currentCluster.host}:${currentCluster.port}`, name: 'TCP' }
+      // For browser-based MQTT connections, we need to simulate the connection test
+      // since browsers cannot directly connect to MQTT TCP ports (only WebSockets)
+      const testMethods = [
+        { method: 'api', name: 'MQTT Connection Test' }
       ];
       
       let connected = false;
       let lastError = null;
       
-      // Helper function to test a single protocol
-      const testSingleProtocol = async (protocol) => {
-        setConnectionStatus(`🔄 Trying ${protocol.name}...`);
+      // Helper function to test connection via different methods
+      const testSingleMethod = async (testMethod) => {
+        setConnectionStatus(`🔄 Testing ${testMethod.name}...`);
         
-        const options = {
-          reconnectPeriod: 0,
-          connectTimeout: 8000,
-          clean: true,
-          keepalive: 30
-        };
-        
-        // Add credentials if available
-        if (info && info.username && info.hasPassword) {
-          options.username = info.username;
-          options.password = info.password || '';
-        } else if (currentCluster.username && currentCluster.password) {
-          options.username = currentCluster.username;
-          options.password = currentCluster.password;
+        if (testMethod.method === 'api') {
+          // Test actual MQTT connection for ALL clusters - no hosted/external bullshit
+          try {
+            const testCredentials = {};
+            if (currentCluster.username) testCredentials.username = currentCluster.username;
+            if (currentCluster.password) testCredentials.password = currentCluster.password;
+            
+            const response = await mqttAPI.clusters.testConnection(currentCluster.uuid, testCredentials);
+            
+            if (response.data.status === 'success') {
+              return { success: true, method: 'Connection Test Passed' };
+            } else {
+              throw new Error(response.data.message || 'MQTT broker connection failed');
+            }
+          } catch (err) {
+            throw new Error(`MQTT test failed: ${err.message}`);
+          }
         }
-        
-        const client = mqtt.connect(protocol.url, options);
-        
-        return new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            client.end(true);
-            reject(new Error(`${protocol.name} connection timeout`));
-          }, 8000);
-          
-          const handleConnect = () => {
-            clearTimeout(timeout);
-            setConnectionStatus(`✅ Connected (${protocol.name})`);
-            client.end();
-            resolve({ success: true, protocol: protocol.name });
-          };
-          
-          const handleError = (err) => {
-            clearTimeout(timeout);
-            client.end(true);
-            reject(err);
-          };
-          
-          client.on('connect', handleConnect);
-          client.on('error', handleError);
-        });
       };
       
-      for (const protocol of protocols) {
+      for (const testMethod of testMethods) {
         if (connected) break;
         
         try {
-          await testSingleProtocol(protocol);
+          setConnectionStatus(`🔄 Testing ${testMethod.name}...`);
+          await testSingleMethod(testMethod);
           connected = true;
+          setConnectionStatus(`✅ Connection verified via ${testMethod.name}`);
           break;
         } catch (err) {
           lastError = err;
-          console.log(`${protocol.name} failed:`, err.message);
+          console.log(`${testMethod.name} failed:`, err.message);
+          setConnectionStatus(`❌ ${testMethod.name} failed`);
+          // Brief pause before trying next method
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
       
@@ -191,7 +208,7 @@ function MqttDashboard() {
     <div className="mqtt-main" style={{padding:'1.5rem'}}>
       <header className="cluster-header">
         <h1>{currentCluster ? currentCluster.name : 'Hosted Broker'}</h1>
-        <button className="back-btn" onClick={()=>navigate('/home')}>← Back</button>
+        <button className="back-btn" onClick={()=>navigate('/mqtt-clusters')}>← Back</button>
       </header>
 
       <div className="cluster-cards">
