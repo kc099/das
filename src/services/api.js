@@ -157,4 +157,49 @@ export const flowAPI = {
   getTemplates: () => api.get('/api/flows/templates/'),
 };
 
+// MQTT API endpoints
+export const mqttAPI = {
+  // Legacy MQTT broker management
+  // Retrieve MQTT connection info for the logged-in user
+  getInfo: () => api.get('/api/mqtt/info/'),
+
+  // Set or update MQTT username/password
+  setPassword: (credentials) => api.post('/api/mqtt/set-password/', credentials),
+
+  // Get statistics
+  getStats: () => api.get('/api/mqtt/stats/'),
+
+  // Delete hosted cluster data
+  deleteHostedCluster: () => api.delete('/api/mqtt/delete-hosted/'),
+
+  // ACLs
+  listAcls: () => api.get('/api/acls/'),
+  addAcl: (data) => api.post('/api/acls/', data),
+  deleteAcl: (id) => api.delete(`/api/acls/${id}/`),
+
+  // MQTT Cluster Management
+  clusters: {
+    // Get all clusters for the user
+    list: () => api.get('/api/mqtt-clusters/'),
+    
+    // Get specific cluster details
+    get: (uuid) => api.get(`/api/mqtt-clusters/${uuid}/`),
+    
+    // Create new cluster
+    create: (clusterData) => api.post('/api/mqtt-clusters/', clusterData),
+    
+    // Update cluster
+    update: (uuid, clusterData) => api.put(`/api/mqtt-clusters/${uuid}/`, clusterData),
+    
+    // Delete cluster
+    delete: (uuid) => api.delete(`/api/mqtt-clusters/${uuid}/`),
+    
+    // Get cluster statistics
+    getStats: (uuid) => api.get(`/api/mqtt-clusters/${uuid}/stats/`),
+    
+    // Test connection to cluster
+    testConnection: (uuid) => api.post(`/api/mqtt-clusters/${uuid}/test/`),
+  }
+};
+
 export default api;

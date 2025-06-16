@@ -6,6 +6,8 @@ import Signup from './Signup';
 import Dashboard from './Dashboard';
 import DashboardCreator from './DashboardCreator';
 import FlowEditor from './FlowEditor';
+import MqttClustersPage from './MqttClustersPage';
+import MqttDashboard from './MqttDashboard';
 import './App.css';
 
 function App() {
@@ -19,6 +21,8 @@ function App() {
         <Route path="/dashboard-creator" element={<DashboardCreator />} />
         <Route path="/flow-editor" element={<FlowEditor />} />
         <Route path="/flow-editor/:flowId" element={<FlowEditor />} />
+        <Route path="/mqtt-clusters" element={<MqttClustersPage />} />
+        <Route path="/mqtt-dashboard" element={<MqttDashboard />} />
       </Routes>
     </Router>
   );
