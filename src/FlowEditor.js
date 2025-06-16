@@ -151,9 +151,9 @@ function FlowEditor() {
       } else {
         // Create new flow
         response = await flowAPI.createFlow(flowData);
-        setCurrentFlowId(response.data.id);
-        // Update URL to include flow ID
-        navigate(`/flow-editor/${response.data.id}`, { replace: true });
+        setCurrentFlowId(response.data.uuid);
+        // Update URL to include flow UUID
+        navigate(`/flow-editor/${response.data.uuid}`, { replace: true });
       }
       
       setSaveStatus('Saved!');

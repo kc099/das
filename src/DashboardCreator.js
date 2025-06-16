@@ -332,7 +332,7 @@ function DashboardCreator() {
   const handleSaveTemplate = async () => {
     if (currentTemplate) {
       try {
-        const response = await authAPI.put(`/dashboard-templates/${currentTemplate.id}/`, currentTemplate);
+        const response = await authAPI.put(`/dashboard-templates/${currentTemplate.uuid}/`, currentTemplate);
         if (response.data.status === 'success') {
           alert('Template saved successfully!');
         }

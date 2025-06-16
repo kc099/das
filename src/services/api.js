@@ -117,17 +117,17 @@ export const dashboardAPI = {
   // Get all dashboard templates for the authenticated user
   getTemplates: () => api.get('/api/dashboard-templates/'),
   
-  // Get a specific template by ID
-  getTemplate: (id) => api.get(`/api/dashboard-templates/${id}/`),
+  // Get a specific template by UUID
+  getTemplate: (uuid) => api.get(`/api/dashboard-templates/${uuid}/`),
   
   // Create a new dashboard template
   createTemplate: (templateData) => api.post('/api/dashboard-templates/', templateData),
   
   // Update an existing template
-  updateTemplate: (id, templateData) => api.put(`/api/dashboard-templates/${id}/`, templateData),
+  updateTemplate: (uuid, templateData) => api.put(`/api/dashboard-templates/${uuid}/`, templateData),
   
   // Delete a template
-  deleteTemplate: (id) => api.delete(`/api/dashboard-templates/${id}/`),
+  deleteTemplate: (uuid) => api.delete(`/api/dashboard-templates/${uuid}/`),
 };
 
 // Flow API endpoints
@@ -135,23 +135,23 @@ export const flowAPI = {
   // Get all flows for the authenticated user
   getFlows: () => api.get('/api/flows/'),
   
-  // Get a specific flow by ID
-  getFlow: (id) => api.get(`/api/flows/${id}/`),
+  // Get a specific flow by UUID
+  getFlow: (uuid) => api.get(`/api/flows/${uuid}/`),
   
   // Create a new flow
   createFlow: (flowData) => api.post('/api/flows/', flowData),
   
   // Update an existing flow
-  updateFlow: (id, flowData) => api.put(`/api/flows/${id}/`, flowData),
+  updateFlow: (uuid, flowData) => api.put(`/api/flows/${uuid}/`, flowData),
   
   // Delete a flow
-  deleteFlow: (id) => api.delete(`/api/flows/${id}/`),
+  deleteFlow: (uuid) => api.delete(`/api/flows/${uuid}/`),
   
   // Execute a flow
-  executeFlow: (id) => api.post(`/api/flows/${id}/execute/`),
+  executeFlow: (uuid) => api.post(`/api/flows/${uuid}/execute/`),
   
   // Duplicate a flow
-  duplicateFlow: (id) => api.post(`/api/flows/${id}/duplicate/`),
+  duplicateFlow: (uuid) => api.post(`/api/flows/${uuid}/duplicate/`),
   
   // Get flow templates
   getTemplates: () => api.get('/api/flows/templates/'),
