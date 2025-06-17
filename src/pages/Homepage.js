@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Homepage.css';
-import NavBar from './components/NavBar';
+import NavBar from '../components/common/NavBar';
 
 function Homepage() {
   const navigate = useNavigate();

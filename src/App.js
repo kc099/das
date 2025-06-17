@@ -1,13 +1,13 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Homepage from './Homepage';
-import Login from './Login';
-import Signup from './Signup';
-import Dashboard from './Dashboard';
-import DashboardCreator from './DashboardCreator';
-import FlowEditor from './FlowEditor';
-import MqttClustersPage from './MqttClustersPage';
-import MqttDashboard from './MqttDashboard';
+import Homepage from './pages/Homepage';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Dashboard from './pages/Dashboard';
+import DashboardCreator from './pages/DashboardCreator';
+import FlowEditor from './pages/FlowEditor';
+import MqttClustersPage from './pages/MqttClustersPage';
+import MqttDashboard from './pages/MqttDashboard';
 import './App.css';
 
 function App() {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mqttAPI } from './services/api';
+import { mqttAPI } from '../services/api';
 import './Dashboard.css';
 import './MqttDashboard.css';
 

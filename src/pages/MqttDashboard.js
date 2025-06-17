@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { mqttAPI } from './services/api';
-import cacheService from './services/cache';
+import { mqttAPI } from '../services/api';
+import cacheService from '../services/cache';
 import './Dashboard.css'; // reuse core styles
 import './MqttDashboard.css';
 

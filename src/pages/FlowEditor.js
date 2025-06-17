@@ -11,12 +11,12 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import NodePalette from './components/NodePalette';
-import CustomNode from './components/CustomNode';
-import CommentNode from './components/CommentNode';
-import PropertiesPanel from './components/PropertiesPanel';
-import { nodeCategories, defaultFlowData, flowMetadata } from './data/nodeTypes';
-import { flowAPI } from './services/api';
+import NodePalette from '../components/flow/NodePalette';
+import CustomNode from '../components/flow/CustomNode';
+import CommentNode from '../components/flow/CommentNode';
+import PropertiesPanel from '../components/flow/PropertiesPanel';
+import { nodeCategories, defaultFlowData, flowMetadata } from '../data/nodeTypes';
+import { flowAPI } from '../services/api';
 import './FlowEditor.css';
 
 const nodeTypes = {

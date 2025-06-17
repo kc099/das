@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { authAPI } from './services/api';
-import { encryptAuthData } from './utils/encryption';
+import { authAPI } from '../services/api';
+import { encryptAuthData } from '../utils/encryption';
 import './Signup.css';
 
 function Signup() {
