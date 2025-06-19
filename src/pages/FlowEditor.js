@@ -31,7 +31,7 @@ const nodeTypes = {
 
 function FlowEditor() {
   const navigate = useNavigate();
-  const { flowId } = useParams();
+  const { projectUuid, flowId } = useParams();
   const [nodes, setNodes, onNodesChange] = useNodesState(defaultFlowData.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(defaultFlowData.edges);
   const [flowMeta, setFlowMeta] = useState(flowMetadata);
@@ -293,6 +293,7 @@ function FlowEditor() {
           selectedNode={selectedNode}
           onUpdateNode={handleUpdateNode}
           onClose={() => setSelectedNode(null)}
+          projectId={projectUuid}
         />
       </div>
     </div>

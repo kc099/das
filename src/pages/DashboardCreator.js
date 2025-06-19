@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { authAPI } from '../services/api';
+import { authAPI, projectAPI, dashboardAPI } from '../services/api';
 import WidgetFactory from '../components/widgets/WidgetFactory';
 import './DashboardCreator.css';
 import '../components/widgets/Widgets.css';
@@ -68,31 +68,13 @@ const DropZone = ({ onDrop, children, isEmpty }) => {
 };
 
 function DashboardCreator() {
-  const [organizations, setOrganizations] = useState([]);
-  const [selectedOrg, setSelectedOrg] = useState('');
-  const [templates, setTemplates] = useState([]);
-  const [currentTemplate, setCurrentTemplate] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
-  const [newOrganization, setNewOrganization] = useState({
-    name: '',
-    description: '',
-    slug: ''
-  });
   const navigate = useNavigate();
-
-  const [newTemplate, setNewTemplate] = useState({
-    name: '',
-    description: '',
-    organization_id: '',
-    update_frequency: 30,
-    connection_timeout: 10,
-    widgets: [],
-    datasources: [],
-    layout: []
-  });
+  const { projectUuid, templateId } = useParams();
+  const [project, setProject] = useState(null);
+  const [currentTemplate, setCurrentTemplate] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Widget Library
   const widgetLibrary = [
@@ -131,28 +113,8 @@ function DashboardCreator() {
       label: 'Table', 
       icon: '📋',
       description: 'Display data in tabular format'
-    },
-    { 
-      value: 'histogram', 
-      label: 'Histogram', 
-      icon: '📊',
-      description: 'Show distribution of values'
-    },
-    { 
-      value: 'xy_chart', 
-      label: 'XY Chart', 
-      icon: '📈',
-      description: 'Plot data points on X-Y axis'
-    },
-    { 
-      value: 'trend_chart', 
-      label: 'Trend Chart', 
-      icon: '📉',
-      description: 'Show trends and patterns'
     }
   ];
-
-
 
   useEffect(() => {
     const initializeDashboardCreator = async () => {
@@ -163,30 +125,44 @@ function DashboardCreator() {
           return;
         }
 
-        // Fetch user's organizations
-        const orgResponse = await authAPI.get('/organizations/');
-        if (orgResponse.data.status === 'success') {
-          setOrganizations(orgResponse.data.organizations);
-          if (orgResponse.data.organizations.length > 0) {
-            setSelectedOrg(orgResponse.data.organizations[0].id);
-            setNewTemplate(prev => ({ ...prev, organization_id: orgResponse.data.organizations[0].id }));
-          } else {
-            // No organizations found, create a default one
-            await createDefaultOrganization();
-          }
+        // If no project, go back to dashboard
+        if (!projectUuid) {
+          navigate('/dashboard');
+          return;
         }
 
-        // Fetch dashboard templates
-        const templatesResponse = await authAPI.get('/dashboard-templates/');
-        if (templatesResponse.data.status === 'success') {
-          setTemplates(templatesResponse.data.templates);
+        // Fetch project details
+        const projectResponse = await projectAPI.getProject(projectUuid);
+        if (projectResponse.data.status === 'success') {
+          setProject(projectResponse.data.project);
+        }
+
+        // If templateId is provided, load that specific template
+        if (templateId) {
+          const templateResponse = await dashboardAPI.getTemplate(templateId);
+          if (templateResponse.data.status === 'success') {
+            setCurrentTemplate(templateResponse.data.template);
+          }
+        } else {
+          // Create a new empty template for the project
+          const newTemplate = {
+            name: `${projectResponse.data.project.name} Dashboard`,
+            description: `Dashboard for ${projectResponse.data.project.name} project`,
+            widgets: [],
+            layout: [],
+            datasources: []
+          };
+          setCurrentTemplate(newTemplate);
         }
 
       } catch (error) {
         console.error('Dashboard Creator initialization error:', error);
+        setError('Failed to load project or template');
         if (error.response?.status === 401) {
           localStorage.clear();
           navigate('/login');
+        } else if (error.response?.status === 404) {
+          setError('Project or template not found');
         }
       } finally {
         setLoading(false);
@@ -194,236 +170,99 @@ function DashboardCreator() {
     };
 
     initializeDashboardCreator();
-  }, [navigate]);
-
-  const createDefaultOrganization = async () => {
-    try {
-      const response = await authAPI.post('/organizations/', {
-        name: 'My Organization',
-        description: 'Default organization for dashboard templates',
-        slug: `org-${Date.now()}`
-      });
-      
-      if (response.data.status === 'success') {
-        const org = response.data.organization;
-        setOrganizations([org]);
-        setSelectedOrg(org.id);
-        setNewTemplate(prev => ({ ...prev, organization_id: org.id }));
-      }
-    } catch (error) {
-      console.error('Error creating default organization:', error);
-    }
-  };
-
-  const handleCreateOrganization = async () => {
-    try {
-      const orgData = {
-        ...newOrganization,
-        slug: newOrganization.slug || newOrganization.name.toLowerCase().replace(/\s+/g, '-')
-      };
-
-      const response = await authAPI.post('/organizations/', orgData);
-      if (response.data.status === 'success') {
-        const org = response.data.organization;
-        setOrganizations([...organizations, org]);
-        setSelectedOrg(org.id);
-        setNewTemplate(prev => ({ ...prev, organization_id: org.id }));
-        setShowCreateOrgModal(false);
-        setNewOrganization({ name: '', description: '', slug: '' });
-      }
-    } catch (error) {
-      console.error('Error creating organization:', error);
-      if (error.response?.data?.error) {
-        const errorMsg = typeof error.response.data.error === 'object' 
-          ? JSON.stringify(error.response.data.error) 
-          : error.response.data.error;
-        alert(`Error creating organization: ${errorMsg}`);
-      } else {
-        alert('Error creating organization. Please try again.');
-      }
-    }
-  };
-
-  const handleCreateTemplate = async () => {
-    try {
-      if (!selectedOrg) {
-        alert('Please select an organization first');
-        return;
-      }
-
-      const templateData = {
-        ...newTemplate,
-        organization_id: parseInt(selectedOrg)
-      };
-
-      const response = await authAPI.post('/dashboard-templates/', templateData);
-      if (response.data.status === 'success') {
-        const template = response.data.template;
-        setTemplates([...templates, template]);
-        setCurrentTemplate(template);
-        setIsEditing(true);
-        setShowCreateModal(false);
-        setNewTemplate({
-          name: '',
-          description: '',
-          organization_id: selectedOrg,
-          update_frequency: 30,
-          connection_timeout: 10,
-          widgets: [],
-          datasources: [],
-          layout: []
-        });
-      }
-    } catch (error) {
-      console.error('Error creating template:', error);
-      if (error.response?.data?.error) {
-        const errorMsg = typeof error.response.data.error === 'object' 
-          ? JSON.stringify(error.response.data.error) 
-          : error.response.data.error;
-        alert(`Error creating template: ${errorMsg}`);
-      } else {
-        alert('Error creating template. Please try again.');
-      }
-    }
-  };
+  }, [navigate, projectUuid, templateId]);
 
   const handleWidgetDrop = (widgetType) => {
-    setCurrentTemplate(prevTemplate => {
-      if (!prevTemplate) return prevTemplate; // Safety check
+    const newWidget = {
+      id: `widget-${Date.now()}`,
+      type: widgetType.value,
+      title: `New ${widgetType.label}`,
+      config: {
+        type: widgetType.value
+      }
+    };
 
-      const COLS = 12; // 12-column grid like Grafana
-      const DEFAULT_W = 4; // default width in grid units
-      const DEFAULT_H = 6; // default height (rows)
+    const newLayout = {
+      i: newWidget.id,
+      x: 0,
+      y: Infinity,
+      w: 6,
+      h: 4,
+      minW: 2,
+      minH: 2
+    };
 
-      const existingWidgets = prevTemplate.widgets.length;
-      const x = (existingWidgets * DEFAULT_W) % COLS; // place next to previous
-
-      const widgetId = `widget_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-      // Create widget definition
-      const newWidget = {
-        id: widgetId,
-        type: widgetType.value,
-        title: `${widgetType.label} Widget`,
-        query: '',
-        datasource: 'mysql',
-        config: {}
-      };
-
-      // Create corresponding layout item
-      const newLayoutItem = {
-        i: widgetId,
-        x,
-        y: Infinity, // put at the bottom automatically
-        w: DEFAULT_W,
-        h: DEFAULT_H,
-        minW: 2,
-        minH: 4
-      };
-
-      return {
-        ...prevTemplate,
-        widgets: [...prevTemplate.widgets, newWidget],
-        layout: [...(prevTemplate.layout || []), newLayoutItem]
-      };
-    });
+    setCurrentTemplate(prev => ({
+      ...prev,
+      widgets: [...(prev.widgets || []), newWidget],
+      layout: [...(prev.layout || []), newLayout]
+    }));
   };
 
   const handleSaveTemplate = async () => {
-    if (currentTemplate) {
-      try {
-        const response = await authAPI.put(`/dashboard-templates/${currentTemplate.uuid}/`, currentTemplate);
+    if (!currentTemplate || !project) return;
+
+    try {
+      setIsSaving(true);
+      
+      const templateData = {
+        name: currentTemplate.name,
+        description: currentTemplate.description,
+        organization_id: project.organization.id,
+        project_id: project.id,
+        widgets: currentTemplate.widgets || [],
+        layout: currentTemplate.layout || [],
+        datasources: currentTemplate.datasources || []
+      };
+
+      if (templateId) {
+        // Update existing template
+        await dashboardAPI.updateTemplate(templateId, templateData);
+        alert('Dashboard template updated successfully!');
+      } else {
+        // Create new template
+        const response = await dashboardAPI.createTemplate(templateData);
         if (response.data.status === 'success') {
-          alert('Template saved successfully!');
+          alert('Dashboard template created successfully!');
+          // Navigate to the project dashboard
+          navigate(`/project/${projectUuid}`);
         }
-      } catch (error) {
-        console.error('Error saving template:', error);
-        alert('Error saving template');
       }
+    } catch (error) {
+      console.error('Error saving template:', error);
+      alert('Failed to save dashboard template. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDeleteWidget = (widgetId) => {
-    if (currentTemplate) {
-      const updatedTemplate = {
-        ...currentTemplate,
-        widgets: currentTemplate.widgets.filter(w => w.id !== widgetId),
-        layout: (currentTemplate.layout || []).filter(l => l.i !== widgetId)
-      };
-
-      // Update state immediately (frontend only)
-      setCurrentTemplate(updatedTemplate);
-      console.log('Widget deleted (frontend only)');
-    }
+    setCurrentTemplate(prev => ({
+      ...prev,
+      widgets: prev.widgets.filter(w => w.id !== widgetId),
+      layout: prev.layout.filter(l => l.i !== widgetId)
+    }));
   };
 
-  // Update template layout when widgets are moved or resized
   const handleLayoutChange = (newLayout) => {
-    setCurrentTemplate(prev => {
-      if (!prev) return prev;
-      return { ...prev, layout: newLayout };
-    });
+    setCurrentTemplate(prev => ({
+      ...prev,
+      layout: newLayout
+    }));
   };
 
-  const handleEditTemplate = async (template) => {
-    try {
-      // Use template from list directly - no API call
-      console.log('Using template from list directly (no API call)');
-      
-      // Ensure all widgets have grid positions for backward compatibility
-      const widgetsWithPositions = template.widgets.map((widget, index) => {
-        if (!widget.gridPosition) {
-          const gridCols = 4;
-          return {
-            ...widget,
-            gridPosition: {
-              x: index % gridCols,
-              y: Math.floor(index / gridCols),
-              width: 1,
-              height: 1
-            }
-          };
-        }
-        return widget;
-      });
-      
-      const existingLayout = template.layout && template.layout.length ? template.layout : widgetsWithPositions.map((w, idx) => ({
-        i: w.id,
-        x: (idx * 4) % 12,
-        y: Infinity,
-        w: 4,
-        h: 6,
-        minW: 2,
-        minH: 4
-      }));
-      const templateWithPositions = {
-        ...template,
-        widgets: widgetsWithPositions,
-        layout: existingLayout
-      };
-      
-      setCurrentTemplate(templateWithPositions);
-      setIsEditing(true);
-    } catch (error) {
-      console.error('Error fetching latest template data:', error);
-      // Fallback to the template from list
-      setCurrentTemplate(template);
-      setIsEditing(true);
-    }
-  };
-
-  const handleBackToList = async () => {
-    setCurrentTemplate(null);
-    setIsEditing(false);
+  const handleDeleteTemplate = async () => {
+    if (!templateId) return;
     
-    // Refresh templates to get latest data
-    try {
-      const templatesResponse = await authAPI.get('/dashboard-templates/');
-      if (templatesResponse.data.status === 'success') {
-        setTemplates(templatesResponse.data.templates);
+    if (window.confirm('Are you sure you want to delete this dashboard template?')) {
+      try {
+        await dashboardAPI.deleteTemplate(templateId);
+        alert('Dashboard template deleted successfully!');
+        navigate(`/project/${projectUuid}`);
+      } catch (error) {
+        console.error('Error deleting template:', error);
+        alert('Failed to delete dashboard template.');
       }
-    } catch (error) {
-      console.error('Error refreshing templates:', error);
     }
   };
 
@@ -438,335 +277,131 @@ function DashboardCreator() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="dashboard-creator-container">
+        <div className="error-state">
+          <h2>Error</h2>
+          <p>{error}</p>
+          <button onClick={() => navigate(`/project/${projectUuid}`)}>
+            Back to Project
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="dashboard-creator-container">
         {/* Header */}
         <header className="creator-header">
           <div className="header-left">
-            <button className="back-btn" onClick={() => navigate('/home')}>
-              ← Back to Home
+            <button 
+              className="back-btn" 
+              onClick={() => navigate(`/project/${projectUuid}`)}
+            >
+              ← Back to Project
             </button>
-            <h1>Dashboard Creator</h1>
-            {currentTemplate && (
-              <span className="current-template">Editing: {currentTemplate.name}</span>
-            )}
+            <div className="title-section">
+              <h1>{currentTemplate?.name || 'Dashboard Editor'}</h1>
+              <span className="project-name">{project?.name}</span>
+            </div>
           </div>
           <div className="header-right">
-            {!isEditing && (
-              <>
-                <div className="org-controls">
-                  <select 
-                    value={selectedOrg} 
-                    onChange={(e) => setSelectedOrg(e.target.value)}
-                    className="org-selector"
-                  >
-                    {organizations.map(org => (
-                      <option key={org.id} value={org.id}>{org.name}</option>
-                    ))}
-                  </select>
-                  <button 
-                    className="create-org-btn"
-                    onClick={() => setShowCreateOrgModal(true)}
-                    title="Create New Organization"
-                  >
-                    + Org
-                  </button>
-                </div>
-                <button 
-                  className="create-btn"
-                  onClick={() => setShowCreateModal(true)}
-                  disabled={!selectedOrg}
-                >
-                  + New Template
-                </button>
-              </>
+            {templateId && (
+              <button 
+                className="delete-btn"
+                onClick={handleDeleteTemplate}
+                title="Delete Dashboard"
+              >
+                🗑️ Delete
+              </button>
             )}
-            {isEditing && (
-              <>
-                <button className="save-btn" onClick={handleSaveTemplate}>
-                  💾 Save Template
-                </button>
-                <button className="back-btn" onClick={handleBackToList}>
-                  ← Back to List
-                </button>
-              </>
-            )}
+            <button 
+              className="save-btn" 
+              onClick={handleSaveTemplate}
+              disabled={isSaving}
+            >
+              {isSaving ? '💾 Saving...' : '💾 Save Dashboard'}
+            </button>
           </div>
         </header>
 
         {/* Main Content */}
         <main className="creator-main">
-          {!isEditing ? (
-            /* Template List View */
-            <div className="templates-section">
-              <div className="section-header">
-                <h2>Dashboard Templates</h2>
-                <p>Create and manage your dashboard templates with various chart widgets</p>
+          <div className="template-editor">
+            <div className="editor-sidebar">
+              <div className="sidebar-header">
+                <h3>Widget Library</h3>
+                <p>Drag widgets to the canvas</p>
               </div>
-              
-              {templates.filter(t => t.organization.id === parseInt(selectedOrg)).length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon">📊</div>
-                  <h3>No templates yet</h3>
-                  <p>Create your first dashboard template to get started</p>
-                  <button 
-                    className="create-first-btn"
-                    onClick={() => setShowCreateModal(true)}
+              <div className="widget-library">
+                {widgetLibrary.map(widget => (
+                  <DraggableWidget 
+                    key={widget.value} 
+                    widget={widget}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            <div className="editor-canvas">
+              <DropZone 
+                onDrop={handleWidgetDrop}
+                isEmpty={!currentTemplate?.widgets?.length}
+              >
+                {!currentTemplate?.widgets?.length ? (
+                  <div className="drop-zone-placeholder">
+                    <div className="placeholder-icon">📊</div>
+                    <h3>Drag widgets here to build your dashboard</h3>
+                    <p>Select widgets from the library on the left and drop them here</p>
+                  </div>
+                ) : (
+                  <ReactGridLayout
+                    className="widgets-grid"
+                    layout={currentTemplate.layout || []}
+                    cols={12}
+                    rowHeight={30}
+                    compactType="vertical"
+                    isResizable
+                    isDraggable
+                    onLayoutChange={handleLayoutChange}
+                    margin={[10, 10]}
                   >
-                    Create First Template
-                  </button>
-                </div>
-              ) : (
-                <div className="templates-grid">
-                  {templates.filter(t => t.organization.id === parseInt(selectedOrg)).map(template => (
-                    <div key={template.id} className="template-card">
-                      <div className="template-header">
-                        <h3>{template.name}</h3>
-                        <div className="template-meta">
-                          <span className="widget-count">{template.widgets.length} widgets</span>
-                          <span className="update-freq">Updates every {template.update_frequency}s</span>
+                    {currentTemplate.widgets.map(widget => (
+                      <div key={widget.id} className="widget-container">
+                        <div className="widget-header">
+                          <span className="widget-title">{widget.title}</span>
+                          <button 
+                            className="delete-widget-btn"
+                            onClick={() => handleDeleteWidget(widget.id)}
+                            title="Delete Widget"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div className="widget-content">
+                          <WidgetFactory
+                            key={widget.id}
+                            widget={{
+                              ...widget,
+                              data: []
+                            }}
+                            onUpdate={() => {}}
+                          />
                         </div>
                       </div>
-                      <div className="template-description">
-                        <p>{template.description}</p>
-                      </div>
-                      <div className="template-actions">
-                        <button 
-                          className="edit-btn"
-                          onClick={() => handleEditTemplate(template)}
-                        >
-                          ✏️ Edit Template
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            /* Template Editor View */
-            <div className="template-editor">
-              <div className="editor-sidebar">
-                <div className="sidebar-header">
-                  <h3>Widget Library</h3>
-                  <p>Drag widgets to the canvas</p>
-                </div>
-                <div className="widget-library">
-                  {widgetLibrary.map(widget => (
-                    <DraggableWidget 
-                      key={widget.value} 
-                      widget={widget}
-                    />
-                  ))}
-                </div>
-              </div>
-              
-              <div className="editor-canvas">
-                <DropZone 
-                  onDrop={handleWidgetDrop}
-                  isEmpty={!currentTemplate?.widgets?.length}
-                >
-                  
-                  {!currentTemplate?.widgets?.length ? (
-                    <div className="drop-zone-placeholder">
-                      <div className="placeholder-icon">📊</div>
-                      <h3>Drag widgets here to build your dashboard</h3>
-                      <p>Select widgets from the library on the left and drop them here</p>
-                    </div>
-                  ) : (
-                    <ReactGridLayout
-                      className="widgets-grid"
-                      layout={currentTemplate.layout || []}
-                      cols={12}
-                      rowHeight={30}
-                      compactType="vertical"
-                      isResizable
-                      isDraggable
-                      draggableHandle=".widget-header"
-                      onLayoutChange={handleLayoutChange}
-                      style={{ padding: '20px', width: '100%' }}
-                    >
-                      {currentTemplate.widgets.map((widget, index) => (
-                        <div key={widget.id} className="widget-container-item" data-grid={currentTemplate.layout?.find(l => l.i === widget.id)}>
-                          <div style={{ position: 'absolute', top: '5px', right: '5px', zIndex: 10 }}>
-                            <button 
-                              onClick={() => handleDeleteWidget(widget.id)}
-                              style={{
-                                background: '#ef4444',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '50%',
-                                width: '24px',
-                                height: '24px',
-                                cursor: 'pointer',
-                                fontSize: '14px'
-                              }}
-                            >
-                              ×
-                            </button>
-                          </div>
-                          <div style={{ height: '100%', overflow: 'hidden' }}>
-                            <WidgetFactory widget={widget} />
-                          </div>
-                        </div>
-                      ))}
-                    </ReactGridLayout>
-                  )}
-                </DropZone>
-              </div>
-            </div>
-          )}
-        </main>
-
-        {/* Create Organization Modal */}
-        {showCreateOrgModal && (
-          <div className="modal-overlay">
-            <div className="modal">
-              <div className="modal-header">
-                <h2>Create New Organization</h2>
-                <button 
-                  className="close-btn"
-                  onClick={() => setShowCreateOrgModal(false)}
-                >
-                  ×
-                </button>
-              </div>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label>Organization Name</label>
-                  <input
-                    type="text"
-                    value={newOrganization.name}
-                    onChange={(e) => setNewOrganization({...newOrganization, name: e.target.value})}
-                    placeholder="Enter organization name"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Description</label>
-                  <textarea
-                    value={newOrganization.description}
-                    onChange={(e) => setNewOrganization({...newOrganization, description: e.target.value})}
-                    placeholder="Describe your organization"
-                    rows="3"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Slug (URL identifier)</label>
-                  <input
-                    type="text"
-                    value={newOrganization.slug}
-                    onChange={(e) => setNewOrganization({...newOrganization, slug: e.target.value})}
-                    placeholder="Auto-generated from name if empty"
-                  />
-                  <small>Used in URLs. Leave empty to auto-generate from name.</small>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button 
-                  className="cancel-btn"
-                  onClick={() => setShowCreateOrgModal(false)}
-                >
-                  Cancel
-                </button>
-                <button 
-                  className="create-btn"
-                  onClick={handleCreateOrganization}
-                  disabled={!newOrganization.name.trim()}
-                >
-                  Create Organization
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Create Template Modal */}
-        {showCreateModal && (
-          <div className="modal-overlay">
-            <div className="modal">
-              <div className="modal-header">
-                <h2>Create New Template</h2>
-                <button 
-                  className="close-btn"
-                  onClick={() => setShowCreateModal(false)}
-                >
-                  ×
-                </button>
-              </div>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label>Template Name</label>
-                  <input
-                    type="text"
-                    value={newTemplate.name}
-                    onChange={(e) => setNewTemplate({...newTemplate, name: e.target.value})}
-                    placeholder="Enter template name"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Description</label>
-                  <textarea
-                    value={newTemplate.description}
-                    onChange={(e) => setNewTemplate({...newTemplate, description: e.target.value})}
-                    placeholder="Describe your dashboard template"
-                    rows="3"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Organization</label>
-                  <select
-                    value={newTemplate.organization_id}
-                    onChange={(e) => setNewTemplate({...newTemplate, organization_id: e.target.value})}
-                  >
-                    <option value="">Select an organization</option>
-                    {organizations.map(org => (
-                      <option key={org.id} value={org.id}>{org.name}</option>
                     ))}
-                  </select>
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Update Frequency (seconds)</label>
-                    <input
-                      type="number"
-                      value={newTemplate.update_frequency}
-                      onChange={(e) => setNewTemplate({...newTemplate, update_frequency: parseInt(e.target.value)})}
-                      min="1"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Connection Timeout (seconds)</label>
-                    <input
-                      type="number"
-                      value={newTemplate.connection_timeout}
-                      onChange={(e) => setNewTemplate({...newTemplate, connection_timeout: parseInt(e.target.value)})}
-                      min="1"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button 
-                  className="cancel-btn"
-                  onClick={() => setShowCreateModal(false)}
-                >
-                  Cancel
-                </button>
-                <button 
-                  className="create-btn"
-                  onClick={handleCreateTemplate}
-                  disabled={!newTemplate.name.trim() || !newTemplate.organization_id}
-                >
-                  Create Template
-                </button>
-              </div>
+                  </ReactGridLayout>
+                )}
+              </DropZone>
             </div>
           </div>
-        )}
+        </main>
       </div>
     </DndProvider>
   );
 }
 
-export default DashboardCreator; 
+export default DashboardCreator;
