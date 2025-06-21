@@ -235,12 +235,6 @@ function Dashboard() {
             </div>
             <div className="modal-footer">
               <button 
-                className="secondary-button"
-                onClick={() => setShowCreateModal(false)}
-              >
-                Cancel
-              </button>
-              <button 
                 className="primary-button"
                 onClick={handleCreateProject}
                 disabled={!newProject.name || !newProject.organization_id}

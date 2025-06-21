@@ -888,6 +888,12 @@
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex: 0 0 auto;
 }
 
 .primary-button:hover {
@@ -1071,12 +1077,14 @@
 .form-group textarea,
 .form-group select {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
   font-size: 0.875rem;
   transition: border-color 0.2s;
   box-sizing: border-box;
+  background: white;
+  font-family: inherit;
 }
 
 .form-group input:focus,
@@ -1087,6 +1095,15 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.form-group select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23666' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 0.65rem;
+  padding-right: 2.5rem;
+}
+
 .form-group textarea {
   resize: vertical;
   min-height: 80px;
@@ -1094,8 +1111,7 @@
 
 .modal-footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
+  justify-content: center;
   padding: 1.5rem;
   border-top: 1px solid #e5e7eb;
   margin-top: 1.5rem;
@@ -1111,6 +1127,12 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex: 0 0 auto;
 }
 
 .secondary-button:hover {

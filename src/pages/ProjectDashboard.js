@@ -296,14 +296,6 @@ function ProjectDashboard() {
           <span className="project-org">{project.organization.name}</span>
         </div>
         <div className="project-actions-nav">
-          <div className="view-tabs">
-            <button 
-              className={activeView === 'overview' ? 'active' : ''}
-              onClick={() => setActiveView('overview')}
-            >
-              Overview
-            </button>
-          </div>
           <button 
             className="delete-project-button"
             onClick={handleDeleteProject}
