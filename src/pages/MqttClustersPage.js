@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { mqttAPI } from '../services/api';
+import DashboardHeader from '../components/common/DashboardHeader';
 import './Dashboard.css';
 import './MqttDashboard.css';
 
 function MqttClustersPage() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const [clusters, setClusters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -16,6 +18,12 @@ function MqttClustersPage() {
     const loadData = async () => {
     try {
       console.log('Loading MQTT clusters...');
+      
+      // Get user data from localStorage
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        setUser(JSON.parse(userData));
+      }
       
       // Get ALL clusters (both hosted and external) from database
       const clustersResponse = await mqttAPI.clusters.list();
@@ -52,7 +60,7 @@ function MqttClustersPage() {
 
   useEffect(() => {
     loadData();
-  }, [navigate]);
+  }, [navigate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreateCluster = async (e) => {
     e.preventDefault();
@@ -113,20 +121,34 @@ function MqttClustersPage() {
     navigate(`/mqtt-dashboard?cluster=${cluster.uuid}`);
   };
 
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/login');
+  };
+
   // Show loading state
   if (loading) {
     return (
       <div className="dashboard-container">
-        <header className="dashboard-header">
-          <div className="header-content">
-            <h1>MQTT Clusters</h1>
-            <button className="back-btn" onClick={() => navigate('/home')}>← Back</button>
+        <DashboardHeader 
+          user={user}
+          subscriptionType="free"
+          onLogout={handleLogout}
+        />
+        <div className="organizations-content">
+          <div className="page-navigation">
+            <button 
+              className="back-button"
+              onClick={() => navigate('/home')}
+            >
+              ← Back to Home
+            </button>
           </div>
-        </header>
-        <div className="tab-content" style={{textAlign: 'center', marginTop: '3rem'}}>
-          <div className="loading-spinner">
-            <div className="spinner"></div>
-            <p>Loading clusters...</p>
+          <div style={{textAlign: 'center', marginTop: '3rem'}}>
+            <div className="loading-spinner">
+              <div className="spinner"></div>
+              <p>Loading clusters...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -138,14 +160,24 @@ function MqttClustersPage() {
     console.log('Empty state - showCreateModal:', showCreateModal, 'showCredentialsModal:', showCredentialsModal);
     return (
       <div className="dashboard-container">
-        <header className="dashboard-header">
-          <div className="header-content">
-            <h1>MQTT Clusters</h1>
-            <button className="back-btn" onClick={() => navigate('/home')}>← Back</button>
+        <DashboardHeader 
+          user={user}
+          subscriptionType="free"
+          onLogout={handleLogout}
+        />
+        <div className="organizations-content">
+          <div className="page-navigation">
+            <button 
+              className="back-button"
+              onClick={() => navigate('/home')}
+            >
+              ← Back to Home
+            </button>
           </div>
-        </header>
+          <h1>MQTT Clusters</h1>
+          <p>Manage your MQTT brokers and connections</p>
 
-        <div className="tab-content" style={{maxWidth: '600px', margin: '2rem auto'}}>
+          <div className="tab-content" style={{maxWidth: '600px', margin: '2rem auto'}}>
           <div className="empty-state">
             <div className="empty-icon">🔒</div>
             <h3>No MQTT clusters configured</h3>
@@ -298,18 +330,29 @@ function MqttClustersPage() {
             </div>
           </div>
         )}
+        </div>
       </div>
     );
   }
 
-    return (
+  return (
     <div className="dashboard-container">
-      <header className="dashboard-header">
-        <div className="header-content">
-          <h1>MQTT Clusters</h1>
-          <button className="back-btn" onClick={() => navigate('/home')}>← Back</button>
+      <DashboardHeader 
+        user={user}
+        subscriptionType="free"
+        onLogout={handleLogout}
+      />
+      <div className="organizations-content">
+        <div className="page-navigation">
+          <button 
+            className="back-button"
+            onClick={() => navigate('/home')}
+          >
+            ← Back to Home
+          </button>
         </div>
-      </header>
+        <h1>MQTT Clusters</h1>
+        <p>Manage your MQTT brokers and connections</p>
 
       {/* Cluster Grid */}
       <div className="tab-content">
@@ -503,6 +546,7 @@ function MqttClustersPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

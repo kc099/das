@@ -3,14 +3,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { projectAPI, flowAPI, dashboardAPI } from '../services/api';
 import DashboardHeader from '../components/common/DashboardHeader';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import FlowEditor from './FlowEditor';
-import DashboardCreator from './DashboardCreator';
+// import FlowEditor from './FlowEditor';
+// import DashboardCreator from './DashboardCreator';
 import './ProjectDashboard.css';
 
 function ProjectDashboard() {
   const navigate = useNavigate();
   const { projectUuid } = useParams();
   const [project, setProject] = useState(null);
+  const [user, setUser] = useState(null);
   const [activeView, setActiveView] = useState('overview'); // 'overview', 'flow', 'dashboard'
   const [flows, setFlows] = useState([]);
   const [dashboards, setDashboards] = useState([]);
@@ -21,6 +22,12 @@ function ProjectDashboard() {
     const loadProjectData = async () => {
       try {
         setLoading(true);
+        
+        // Get user data from localStorage
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          setUser(JSON.parse(userData));
+        }
         
         // Load project details
         const projectResponse = await projectAPI.getProject(projectUuid);
@@ -272,9 +279,12 @@ function ProjectDashboard() {
   return (
     <div className="project-dashboard-container">
       <DashboardHeader 
-        user={{ username: 'User' }} // This should come from auth context
+        user={user}
         subscriptionType="free"
-        onLogout={() => navigate('/login')}
+        onLogout={() => {
+          localStorage.clear();
+          navigate('/login');
+        }}
       />
       
       <div className="project-navigation">

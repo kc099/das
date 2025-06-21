@@ -4,6 +4,7 @@ import Homepage from './pages/Homepage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
+import Organizations from './pages/Organizations';
 import ProjectDashboard from './pages/ProjectDashboard';
 import DashboardCreator from './pages/DashboardCreator';
 import FlowEditor from './pages/FlowEditor';
@@ -22,6 +23,9 @@ function App() {
         {/* Dashboard now serves as project launcher */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/home" element={<Dashboard />} />
+        
+        {/* Organizations management */}
+        <Route path="/organizations" element={<Organizations />} />
         
         {/* Project-centric routes */}
         <Route path="/project/:projectUuid" element={<ProjectDashboard />} />
