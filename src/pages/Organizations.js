@@ -190,7 +190,7 @@ function Organizations() {
                   </p>
                   <div className="organization-stats">
                     <span>{org.project_count || 0} projects</span>
-                    <span>{org.member_count || 1} members</span>
+                    <span>{(org.admin_count || 0) + (org.user_count || 0) + 1} members</span>
                   </div>
                   <div className="organization-meta">
                     <span className="created">
