@@ -12,10 +12,17 @@ function Organizations() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState(null);
+  const [orgMembers, setOrgMembers] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: ''
+  });
+  const [memberFormData, setMemberFormData] = useState({
+    email: '',
+    role: 'user'
   });
 
   useEffect(() => {
@@ -67,7 +74,10 @@ function Organizations() {
       }
     } catch (error) {
       console.error('Error creating organization:', error);
-      alert('Failed to create organization. Please try again.');
+      const errorMessage = error.response?.data?.error?.name?.[0] || 
+                          error.response?.data?.error || 
+                          'Failed to create organization. Please try again.';
+      alert(errorMessage);
     }
   };
 
@@ -109,6 +119,74 @@ function Organizations() {
       description: org.description || ''
     });
     setShowEditModal(true);
+  };
+
+  const openMembersModal = async (org) => {
+    setSelectedOrg(org);
+    setShowMembersModal(true);
+    setLoadingMembers(true);
+    
+    try {
+      const response = await organizationAPI.getOrganizationMembers(org.id);
+      if (response.data.status === 'success') {
+        setOrgMembers(response.data.members);
+      }
+    } catch (error) {
+      console.error('Error fetching organization members:', error);
+      alert('Failed to load organization members. Please try again.');
+    } finally {
+      setLoadingMembers(false);
+    }
+  };
+
+  const handleAddMember = async () => {
+    if (!memberFormData.email) {
+      alert('Please enter an email address.');
+      return;
+    }
+
+    try {
+      const response = await organizationAPI.addOrganizationMember(selectedOrg.id, memberFormData);
+      if (response.data.status === 'success') {
+        setOrgMembers([...orgMembers, response.data.member]);
+        setMemberFormData({ email: '', role: 'user' });
+        
+        // Update organization list to reflect new member count
+        const updatedOrgs = organizations.map(org => 
+          org.id === selectedOrg.id 
+            ? { ...org, user_count: (org.user_count || 0) + 1 }
+            : org
+        );
+        setOrganizations(updatedOrgs);
+      }
+    } catch (error) {
+      console.error('Error adding member:', error);
+      const errorMessage = error.response?.data?.error || 'Failed to add member. Please try again.';
+      alert(errorMessage);
+    }
+  };
+
+  const handleRemoveMember = async (member) => {
+    if (!window.confirm(`Are you sure you want to remove ${member.user.email} from this organization?`)) {
+      return;
+    }
+
+    try {
+      await organizationAPI.removeOrganizationMember(selectedOrg.id, member.id);
+      setOrgMembers(orgMembers.filter(m => m.id !== member.id));
+      
+      // Update organization list to reflect removed member count
+      const updatedOrgs = organizations.map(org => 
+        org.id === selectedOrg.id 
+          ? { ...org, user_count: Math.max((org.user_count || 1) - 1, 0) }
+          : org
+      );
+      setOrganizations(updatedOrgs);
+    } catch (error) {
+      console.error('Error removing member:', error);
+      const errorMessage = error.response?.data?.error || 'Failed to remove member. Please try again.';
+      alert(errorMessage);
+    }
   };
 
   if (loading) {
@@ -170,6 +248,13 @@ function Organizations() {
                     <h3>{org.name}</h3>
                     <div className="organization-actions">
                       <button 
+                        className="members-button"
+                        onClick={() => openMembersModal(org)}
+                        title="Manage members"
+                      >
+                        👥
+                      </button>
+                      <button 
                         className="edit-button"
                         onClick={() => openEditModal(org)}
                         title="Edit organization"
@@ -190,7 +275,7 @@ function Organizations() {
                   </p>
                   <div className="organization-stats">
                     <span>{org.project_count || 0} projects</span>
-                    <span>{(org.admin_count || 0) + (org.user_count || 0) + 1} members</span>
+                    <span>{(org.admin_count || 0) + (org.user_count || 0)} members</span>
                   </div>
                   <div className="organization-meta">
                     <span className="created">
@@ -241,12 +326,6 @@ function Organizations() {
             </div>
             <div className="modal-footer">
               <button 
-                className="secondary-button"
-                onClick={() => setShowCreateModal(false)}
-              >
-                Cancel
-              </button>
-              <button 
                 className="primary-button"
                 onClick={handleCreateOrg}
                 disabled={!formData.name}
@@ -295,18 +374,106 @@ function Organizations() {
             </div>
             <div className="modal-footer">
               <button 
-                className="secondary-button"
-                onClick={() => setShowEditModal(false)}
-              >
-                Cancel
-              </button>
-              <button 
                 className="primary-button"
                 onClick={handleEditOrg}
                 disabled={!formData.name}
               >
                 Save Changes
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Members Management Modal */}
+      {showMembersModal && (
+        <div className="modal-overlay" onClick={() => setShowMembersModal(false)}>
+          <div className="modal-content members-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Manage Members - {selectedOrg?.name}</h2>
+              <button 
+                className="close-button"
+                onClick={() => setShowMembersModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              {/* Add Member Section */}
+              <div className="add-member-section">
+                <h3>Add New Member</h3>
+                <div className="form-row">
+                  <div className="form-group">
+                    <input
+                      type="email"
+                      placeholder="Enter email address"
+                      value={memberFormData.email}
+                      onChange={e => setMemberFormData({...memberFormData, email: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <select
+                      value={memberFormData.role}
+                      onChange={e => setMemberFormData({...memberFormData, role: e.target.value})}
+                    >
+                      <option value="user">User</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <button 
+                    className="primary-button"
+                    onClick={handleAddMember}
+                  >
+                    Add Member
+                  </button>
+                </div>
+              </div>
+
+              {/* Members List Section */}
+              <div className="members-list-section">
+                <h3>Current Members</h3>
+                {loadingMembers ? (
+                  <div className="loading-members">Loading members...</div>
+                ) : (
+                  <div className="members-list">
+                    {orgMembers.map((member, index) => (
+                      <div key={member.id || index} className="member-item">
+                        <div className="member-info">
+                          <div className="member-details">
+                            <span className="member-name">
+                              {member.user.first_name || member.user.last_name 
+                                ? `${member.user.first_name} ${member.user.last_name}`.trim()
+                                : member.user.username}
+                            </span>
+                            <span className="member-email">{member.user.email}</span>
+                          </div>
+                          <div className="member-role">
+                            <span className={`role-badge ${member.role}`}>
+                              {member.role === 'admin' ? 'Admin' : 'User'}
+                            </span>
+                            {member.user.id === selectedOrg?.owner?.id && (
+                              <span className="owner-badge">Owner</span>
+                            )}
+                          </div>
+                        </div>
+                        {/* Only show remove button for non-owners */}
+                        {member.user.id !== selectedOrg?.owner?.id && (
+                          <button 
+                            className="remove-member-button"
+                            onClick={() => handleRemoveMember(member)}
+                            title="Remove member"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    {orgMembers.length === 0 && !loadingMembers && (
+                      <div className="no-members">No additional members found.</div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
