@@ -985,7 +985,7 @@
 }
 
 .create-project-button {
-  background-color: #3b82f6;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -998,7 +998,7 @@
 }
 
 .create-project-button:hover {
-  background-color: #2563eb;
+  background-color: var(--primary-hover);
 }
 
 .empty-projects {
@@ -1031,7 +1031,7 @@
 }
 
 .primary-button {
-  background-color: #3b82f6;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -1049,7 +1049,7 @@
 }
 
 .primary-button:hover {
-  background-color: #2563eb;
+  background-color: var(--primary-hover);
 }
 
 .primary-button:disabled {
