@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { authAPI, projectAPI, organizationAPI } from '../services/api';
 import cacheService from '../services/cache';
 import DashboardHeader from '../components/common/DashboardHeader';
+import DashboardSidebar from '../components/common/DashboardSidebar';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import './Dashboard.css';
 
@@ -13,6 +14,13 @@ function Dashboard() {
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [overviewStats, setOverviewStats] = useState({
+    organizations: 0,
+    projects: 0,
+    mqttClusters: 0,
+    connectedDevices: 0
+  });
   const [newProject, setNewProject] = useState({
     name: '',
     description: '',
@@ -42,13 +50,33 @@ function Dashboard() {
           if (orgResponse.data.organizations.length > 0) {
             setNewProject(prev => ({ ...prev, organization_id: orgResponse.data.organizations[0].id }));
           }
+          
+          // Update overview stats
+          setOverviewStats(prev => ({
+            ...prev,
+            organizations: orgResponse.data.organizations.length
+          }));
         }
 
         // Fetch user's projects
         const projectsResponse = await projectAPI.getProjects();
         if (projectsResponse.data.status === 'success') {
           setProjects(projectsResponse.data.projects);
+          
+          // Update overview stats
+          setOverviewStats(prev => ({
+            ...prev,
+            projects: projectsResponse.data.projects.length
+          }));
         }
+
+        // Load cached stats for devices and MQTT clusters
+        const cachedStats = await cacheService.getOverviewStats();
+        setOverviewStats(prev => ({
+          ...prev,
+          mqttClusters: cachedStats.mqttClusters,
+          connectedDevices: cachedStats.connectedDevices
+        }));
 
       } catch (error) {
         console.error('Dashboard initialization error:', error);
@@ -84,6 +112,10 @@ function Dashboard() {
       const response = await projectAPI.createProject(newProject);
       if (response.data.status === 'success') {
         setProjects([...projects, response.data.project]);
+        setOverviewStats(prev => ({
+          ...prev,
+          projects: prev.projects + 1
+        }));
         setShowCreateModal(false);
         setNewProject({
           name: '',
@@ -125,66 +157,77 @@ function Dashboard() {
       <DashboardHeader 
         user={user} 
         subscriptionType="free" // This should come from user profile
-        onLogout={handleLogout} 
+        onLogout={handleLogout}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />
-      <main className="dashboard-main">
-        <div className="dashboard-content">
-          <div className="projects-header">
-            <div>
-              <h1>Your Projects</h1>
-              <p>Manage your IoT applications and data flows</p>
-            </div>
-            <button 
-              className="create-project-button"
-              onClick={() => setShowCreateModal(true)}
-            >
-              + New Project
-            </button>
-          </div>
+      
+      <div className="dashboard-layout">
+        {/* Shared Sidebar Component */}
+        <DashboardSidebar 
+          isOpen={sidebarOpen} 
+          onClose={() => setSidebarOpen(false)} 
+        />
 
-          {projects.length === 0 ? (
-            <div className="empty-projects">
-              <div className="empty-icon">📊</div>
-              <h2>No Projects Yet</h2>
-              <p>Create your first IoT project to start building data flows and dashboards</p>
+        {/* Main Content */}
+        <main className="dashboard-main">
+          <div className="dashboard-content">
+            <div className="projects-header">
+              <div>
+                <h1>Your Projects</h1>
+                <p>Manage your IoT applications and data flows</p>
+              </div>
               <button 
-                className="primary-button"
+                className="create-project-button"
                 onClick={() => setShowCreateModal(true)}
               >
-                Create Your First Project
+                + New Project
               </button>
             </div>
-          ) : (
-            <div className="projects-grid">
-              {projects.map(project => (
-                <div 
-                  key={project.uuid} 
-                  className="project-card"
-                  onClick={() => navigate(`/project/${project.uuid}`)}
+
+            {projects.length === 0 ? (
+              <div className="empty-projects">
+                <div className="empty-icon">📊</div>
+                <h2>No Projects Yet</h2>
+                <p>Create your first IoT project to start building data flows and dashboards</p>
+                <button 
+                  className="primary-button"
+                  onClick={() => setShowCreateModal(true)}
                 >
-                  <div className="project-card-header">
-                    <h3>{project.name}</h3>
-                    <span className={`status-badge ${project.status}`}>
-                      {project.status}
-                    </span>
+                  Create Your First Project
+                </button>
+              </div>
+            ) : (
+              <div className="projects-grid">
+                {projects.map(project => (
+                  <div 
+                    key={project.uuid} 
+                    className="project-card"
+                    onClick={() => navigate(`/project/${project.uuid}`)}
+                  >
+                    <div className="project-card-header">
+                      <h3>{project.name}</h3>
+                      <span className={`status-badge ${project.status}`}>
+                        {project.status}
+                      </span>
+                    </div>
+                    <p className="project-description">{project.description}</p>
+                    <div className="project-stats">
+                      <span>{project.flow_count} flows</span>
+                      <span>{project.dashboard_count} dashboards</span>
+                    </div>
+                    <div className="project-meta">
+                      <span className="organization">{project.organization.name}</span>
+                      <span className="updated">
+                        Updated {new Date(project.updated_at).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
-                  <p className="project-description">{project.description}</p>
-                  <div className="project-stats">
-                    <span>{project.flow_count} flows</span>
-                    <span>{project.dashboard_count} dashboards</span>
-                  </div>
-                  <div className="project-meta">
-                    <span className="organization">{project.organization.name}</span>
-                    <span className="updated">
-                      Updated {new Date(project.updated_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
 
       {/* Create Project Modal */}
       {showCreateModal && (
@@ -205,35 +248,43 @@ function Dashboard() {
                 <input
                   id="project-name"
                   type="text"
+                  placeholder="Enter project name"
                   value={newProject.name}
                   onChange={e => setNewProject({...newProject, name: e.target.value})}
-                  placeholder="e.g., Smart Greenhouse, Factory Floor Monitors"
+                  required
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="project-description">Description</label>
-                <textarea
-                  id="project-description"
-                  value={newProject.description}
-                  onChange={e => setNewProject({...newProject, description: e.target.value})}
-                  placeholder="Describe what this project will do..."
-                  rows={3}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="project-organization">Organization *</label>
+                <label htmlFor="project-org">Organization *</label>
                 <select
-                  id="project-organization"
+                  id="project-org"
                   value={newProject.organization_id}
-                  onChange={e => setNewProject({...newProject, organization_id: parseInt(e.target.value)})}
+                  onChange={e => setNewProject({...newProject, organization_id: e.target.value})}
+                  required
                 >
                   {organizations.map(org => (
                     <option key={org.id} value={org.id}>{org.name}</option>
                   ))}
                 </select>
               </div>
+              <div className="form-group">
+                <label htmlFor="project-desc">Description</label>
+                <textarea
+                  id="project-desc"
+                  placeholder="Describe your project"
+                  value={newProject.description}
+                  onChange={e => setNewProject({...newProject, description: e.target.value})}
+                  rows="3"
+                />
+              </div>
             </div>
             <div className="modal-footer">
+              <button 
+                className="secondary-button"
+                onClick={() => setShowCreateModal(false)}
+              >
+                Cancel
+              </button>
               <button 
                 className="primary-button"
                 onClick={handleCreateProject}

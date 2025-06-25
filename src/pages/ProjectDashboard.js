@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { projectAPI, flowAPI, dashboardAPI, deviceAPI } from '../services/api';
 import DashboardHeader from '../components/common/DashboardHeader';
@@ -12,7 +12,7 @@ function ProjectDashboard() {
   const { projectUuid } = useParams();
   const [project, setProject] = useState(null);
   const [user, setUser] = useState(null);
-  const [activeView, setActiveView] = useState('overview'); // 'overview', 'flow', 'dashboard'
+  const [activeView] = useState('overview'); // 'overview', 'flow', 'dashboard'
   const [flows, setFlows] = useState([]);
   const [dashboards, setDashboards] = useState([]);
   const [devices, setDevices] = useState([]);
@@ -21,6 +21,17 @@ function ProjectDashboard() {
   const [error, setError] = useState(null);
   const [showAssignDeviceModal, setShowAssignDeviceModal] = useState(false);
   const [selectedDevices, setSelectedDevices] = useState([]);
+
+  const loadProjectDevices = useCallback(async () => {
+    try {
+      const response = await deviceAPI.getDevicesByProject(projectUuid);
+      if (response.data && Array.isArray(response.data)) {
+        setDevices(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading project devices:', error);
+    }
+  }, [projectUuid]);
 
   useEffect(() => {
     const loadProjectData = async () => {
@@ -76,18 +87,7 @@ function ProjectDashboard() {
     if (projectUuid) {
       loadProjectData();
     }
-  }, [projectUuid, navigate]);
-
-  const loadProjectDevices = async () => {
-    try {
-      const response = await deviceAPI.getDevicesByProject(projectUuid);
-      if (response.data && Array.isArray(response.data)) {
-        setDevices(response.data);
-      }
-    } catch (error) {
-      console.error('Error loading project devices:', error);
-    }
-  };
+  }, [projectUuid, navigate, loadProjectDevices]);
 
   const loadAvailableDevices = async () => {
     try {

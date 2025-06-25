@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { organizationAPI, projectAPI, mqttAPI } from '../../services/api';
 import cacheService from '../../services/cache';
 
-const DashboardHeader = ({ user, subscriptionType, onLogout }) => {
+const DashboardHeader = ({ user, subscriptionType, onLogout, onToggleSidebar }) => {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const [overviewData, setOverviewData] = useState({
@@ -87,6 +87,11 @@ const DashboardHeader = ({ user, subscriptionType, onLogout }) => {
     <header className="dashboard-header">
       <div className="header-content">
         <div className="logo-section">
+          {onToggleSidebar && (
+            <button className="sidebar-toggle" onClick={onToggleSidebar}>
+              ☰
+            </button>
+          )}
           <h1>EdgeSync Dashboard</h1>
           <span className="subscription-badge">{subscriptionType}</span>
         </div>

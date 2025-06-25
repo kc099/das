@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { authAPI, deviceAPI, organizationAPI } from '../services/api';
 import cacheService from '../services/cache';
 import DashboardHeader from '../components/common/DashboardHeader';
+import DashboardSidebar from '../components/common/DashboardSidebar';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import './Devices.css';
 
@@ -14,6 +15,7 @@ function Devices() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showTokenModal, setShowTokenModal] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [newDevice, setNewDevice] = useState({
     name: '',
     description: '',
@@ -167,7 +169,7 @@ function Devices() {
 
   if (loading) {
     return (
-      <div className="devices-container">
+      <div className="dashboard-container">
         <LoadingSpinner message="Loading your devices..." />
       </div>
     );
@@ -175,7 +177,7 @@ function Devices() {
 
   if (!user) {
     return (
-      <div className="devices-container">
+      <div className="dashboard-container">
         <div className="error-state">
           <h2>Access Denied</h2>
           <p>Please log in to access your devices.</p>
@@ -186,82 +188,107 @@ function Devices() {
   }
 
   return (
-    <div className="devices-container">
+    <div className="dashboard-container">
       <DashboardHeader 
         user={user} 
         subscriptionType="free"
-        onLogout={handleLogout} 
+        onLogout={handleLogout}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />
-      <main className="devices-main">
-        <div className="devices-content">
-          <div className="devices-header">
-            <div>
-              <h1>Your Devices</h1>
-              <p>Manage your IoT devices and their project assignments</p>
-            </div>
-            <button 
-              className="create-device-button"
-              onClick={() => setShowCreateModal(true)}
-            >
-              + New Device
-            </button>
-          </div>
+      
+      <div className="dashboard-layout">
+        {/* Shared Sidebar Component */}
+        <DashboardSidebar 
+          isOpen={sidebarOpen} 
+          onClose={() => setSidebarOpen(false)} 
+        />
 
-          {devices.length === 0 ? (
-            <div className="empty-devices">
-              <div className="empty-icon">🏠</div>
-              <h2>No Devices Yet</h2>
-              <p>Create your first IoT device to start collecting data</p>
+        {/* Main Content */}
+        <main className="dashboard-main">
+          <div className="dashboard-content">
+            <div className="projects-header">
+              <div>
+                <h1>Your Devices</h1>
+                <p>Manage your IoT devices and their project assignments</p>
+              </div>
               <button 
-                className="primary-button"
-                onClick={() => setShowCreateModal(true)}
+                className="create-project-button"
+                onClick={() => {
+                  setShowCreateModal(true);
+                  if (organizations.length > 0) {
+                    loadProjectsForOrganization(organizations[0].id);
+                  }
+                }}
               >
-                Create Your First Device
+                + New Device
               </button>
             </div>
-          ) : (
-            <div className="devices-grid">
-              {devices.map(device => (
-                <div key={device.uuid} className="device-card">
-                  <div className="device-card-header">
-                    <h3>{device.name}</h3>
-                    <span className={`status-badge ${device.status}`}>
-                      {device.status}
-                    </span>
+
+            {devices.length === 0 ? (
+              <div className="empty-projects">
+                <div className="empty-icon">📱</div>
+                <h2>No Devices Yet</h2>
+                <p>Create your first IoT device to start collecting data and building applications</p>
+                <button 
+                  className="primary-button"
+                  onClick={() => {
+                    setShowCreateModal(true);
+                    if (organizations.length > 0) {
+                      loadProjectsForOrganization(organizations[0].id);
+                    }
+                  }}
+                >
+                  Create Your First Device
+                </button>
+              </div>
+            ) : (
+              <div className="projects-grid">
+                {devices.map(device => (
+                  <div key={device.uuid} className="project-card">
+                    <div className="project-card-header">
+                      <h3>{device.name}</h3>
+                      <span className={`status-badge ${device.status}`}>
+                        {device.status}
+                      </span>
+                    </div>
+                    <p className="project-description">{device.description || 'No description provided'}</p>
+                    <div className="project-stats">
+                      <span>{device.projects?.length || 0} projects</span>
+                      <span>Token: {device.token ? '••••••••' : 'None'}</span>
+                    </div>
+                    <div className="project-meta">
+                      <span className="organization">{device.organization?.name}</span>
+                      <span className="updated">
+                        Updated {new Date(device.updated_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="device-actions">
+                      <button 
+                        className="action-button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRegenerateToken(device.uuid);
+                        }}
+                      >
+                        Show Token
+                      </button>
+                      <button 
+                        className="action-button delete"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteDevice(device.uuid);
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                  <p className="device-description">{device.description}</p>
-                  <div className="device-stats">
-                    <span>{device.project_count} projects</span>
-                    <span className={`active-badge ${device.is_active ? 'active' : 'inactive'}`}>
-                      {device.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                  <div className="device-meta">
-                    <span className="organization">{device.organization_name}</span>
-                    <span className="updated">
-                      Updated {new Date(device.updated_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="device-actions">
-                    <button 
-                      className="action-button"
-                      onClick={() => handleRegenerateToken(device.uuid)}
-                    >
-                      🔑 Regenerate Token
-                    </button>
-                    <button 
-                      className="action-button delete"
-                      onClick={() => handleDeleteDevice(device.uuid)}
-                    >
-                      🗑️ Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
 
       {/* Create Device Modal */}
       {showCreateModal && (

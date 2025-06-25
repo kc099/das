@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { organizationAPI } from '../services/api';
+import { authAPI, organizationAPI } from '../services/api';
 import DashboardHeader from '../components/common/DashboardHeader';
+import DashboardSidebar from '../components/common/DashboardSidebar';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import cacheService from '../services/cache';
 import './Organizations.css';
 
 function Organizations() {
@@ -16,6 +18,7 @@ function Organizations() {
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [orgMembers, setOrgMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: ''
@@ -34,10 +37,10 @@ function Organizations() {
           return;
         }
 
-        // Get user data
-        const userData = localStorage.getItem('user');
-        if (userData) {
-          setUser(JSON.parse(userData));
+        // Fetch user profile
+        const userResponse = await authAPI.get('/profile/');
+        if (userResponse.data.status === 'success') {
+          setUser(userResponse.data.user);
         }
 
         // Fetch organizations
@@ -59,9 +62,19 @@ function Organizations() {
     initializeOrganizations();
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (refreshToken) {
+        await authAPI.logout(refreshToken);
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.clear();
+      cacheService.clearAll();
+      navigate('/');
+    }
   };
 
   const handleCreateOrg = async () => {
@@ -191,103 +204,135 @@ function Organizations() {
 
   if (loading) {
     return (
-      <div className="organizations-container">
-        <LoadingSpinner message="Loading organizations..." />
+      <div className="dashboard-container">
+        <DashboardHeader 
+          user={user}
+          subscriptionType="free"
+          onLogout={handleLogout}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        />
+        <div className="dashboard-layout">
+          <DashboardSidebar 
+            isOpen={sidebarOpen} 
+            onClose={() => setSidebarOpen(false)} 
+          />
+          <main className="dashboard-main">
+            <div className="dashboard-content">
+              <LoadingSpinner message="Loading organizations..." />
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="dashboard-container">
+        <div className="error-state">
+          <h2>Access Denied</h2>
+          <p>Please log in to access organizations.</p>
+          <button onClick={() => navigate('/login')}>Go to Login</button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="organizations-container">
+    <div className="dashboard-container">
       <DashboardHeader 
-        user={user} 
+        user={user}
         subscriptionType="free"
         onLogout={handleLogout}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />
-      
-      <main className="organizations-main">
-        <div className="organizations-content">
-          <div className="organizations-header">
-            <div>
-              <div className="page-navigation">
-                <button 
-                  className="back-button"
-                  onClick={() => navigate('/home')}
-                >
-                  ← Back to Home
-                </button>
+      <div className="dashboard-layout">
+        <DashboardSidebar 
+          isOpen={sidebarOpen} 
+          onClose={() => setSidebarOpen(false)} 
+        />
+        <main className="dashboard-main">
+          <div className="dashboard-content">
+            <div className="projects-header">
+              <div>
+                <h1>Organizations</h1>
               </div>
-              <h1>Organizations</h1>
-              <p>Manage your organization settings and members</p>
-            </div>
-            <button 
-              className="create-organization-button"
-              onClick={() => setShowCreateModal(true)}
-            >
-              + New Organization
-            </button>
-          </div>
-
-          {organizations.length === 0 ? (
-            <div className="empty-organizations">
-              <div className="empty-icon">🏢</div>
-              <h2>No Organizations Yet</h2>
-              <p>Create your first organization to start managing projects and teams</p>
               <button 
-                className="primary-button"
+                className="primary-button" 
                 onClick={() => setShowCreateModal(true)}
               >
-                Create Your First Organization
+                + Create Organization
               </button>
             </div>
-          ) : (
-            <div className="organizations-grid">
-              {organizations.map(org => (
-                <div key={org.id} className="organization-card">
-                  <div className="organization-card-header">
-                    <h3>{org.name}</h3>
-                    <div className="organization-actions">
+
+            {organizations.length === 0 ? (
+              <div className="empty-projects">
+                <div className="empty-icon">🏢</div>
+                <h2>No Organizations Yet</h2>
+                <p>Create your first organization to start managing teams and projects</p>
+                <button 
+                  className="primary-button" 
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  Create Organization
+                </button>
+              </div>
+            ) : (
+              <div className="organizations-grid">
+                {organizations.map((org) => (
+                  <div key={org.id} className="organization-card">
+                    <div className="organization-header">
+                      <div className="organization-info">
+                        <h3>{org.name}</h3>
+                        <p>{org.description || 'No description provided'}</p>
+                      </div>
+                      <div className="organization-actions">
+                        <button 
+                          className="action-btn edit-btn"
+                          onClick={() => openEditModal(org)}
+                          title="Edit Organization"
+                        >
+                          ✏️
+                        </button>
+                        <button 
+                          className="action-btn delete-btn"
+                          onClick={() => handleDeleteOrg(org.id, org.name)}
+                          title="Delete Organization"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="organization-stats">
+                      <div className="stat">
+                        <span className="stat-value">{org.user_count || 0}</span>
+                        <span className="stat-label">Members</span>
+                      </div>
+                      <div className="stat">
+                        <span className="stat-value">{org.project_count || 0}</span>
+                        <span className="stat-label">Projects</span>
+                      </div>
+                    </div>
+                    
+                    <div className="organization-footer">
                       <button 
-                        className="members-button"
+                        className="members-btn"
                         onClick={() => openMembersModal(org)}
-                        title="Manage members"
                       >
-                        👥
+                        👥 Manage Members
                       </button>
-                      <button 
-                        className="edit-button"
-                        onClick={() => openEditModal(org)}
-                        title="Edit organization"
-                      >
-                        ✏️
-                      </button>
-                      <button 
-                        className="delete-button"
-                        onClick={() => handleDeleteOrg(org.id, org.name)}
-                        title="Delete organization"
-                      >
-                        🗑️
-                      </button>
+                      <span className="organization-date">
+                        Created {new Date(org.created_at).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
-                  <p className="organization-description">
-                    {org.description || 'No description provided'}
-                  </p>
-                  <div className="organization-stats">
-                    <span>{org.project_count || 0} projects</span>
-                    <span>{(org.admin_count || 0) + (org.user_count || 0)} members</span>
-                  </div>
-                  <div className="organization-meta">
-                    <span className="created">
-                      Created {new Date(org.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
 
       {/* Create Organization Modal */}
       {showCreateModal && (
