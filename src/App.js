@@ -10,6 +10,7 @@ import DashboardCreator from './pages/DashboardCreator';
 import FlowEditor from './pages/FlowEditor';
 import MqttClustersPage from './pages/MqttClustersPage';
 import MqttDashboard from './pages/MqttDashboard';
+import Devices from './pages/Devices';
 import './App.css';
 
 function App() {
@@ -26,6 +27,9 @@ function App() {
         
         {/* Organizations management */}
         <Route path="/organizations" element={<Organizations />} />
+        
+        {/* Device management */}
+        <Route path="/devices" element={<Devices />} />
         
         {/* Project-centric routes */}
         <Route path="/project/:projectUuid" element={<ProjectDashboard />} />

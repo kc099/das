@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { projectAPI, flowAPI, dashboardAPI } from '../services/api';
+import { projectAPI, flowAPI, dashboardAPI, deviceAPI } from '../services/api';
 import DashboardHeader from '../components/common/DashboardHeader';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 // import FlowEditor from './FlowEditor';
@@ -15,8 +15,12 @@ function ProjectDashboard() {
   const [activeView, setActiveView] = useState('overview'); // 'overview', 'flow', 'dashboard'
   const [flows, setFlows] = useState([]);
   const [dashboards, setDashboards] = useState([]);
+  const [devices, setDevices] = useState([]);
+  const [availableDevices, setAvailableDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showAssignDeviceModal, setShowAssignDeviceModal] = useState(false);
+  const [selectedDevices, setSelectedDevices] = useState([]);
 
   useEffect(() => {
     const loadProjectData = async () => {
@@ -53,6 +57,9 @@ function ProjectDashboard() {
           setDashboards(projectDashboards);
         }
 
+        // Load project devices
+        await loadProjectDevices();
+
       } catch (error) {
         console.error('Error loading project data:', error);
         setError('Failed to load project data');
@@ -70,6 +77,63 @@ function ProjectDashboard() {
       loadProjectData();
     }
   }, [projectUuid, navigate]);
+
+  const loadProjectDevices = async () => {
+    try {
+      const response = await deviceAPI.getDevicesByProject(projectUuid);
+      if (response.data && Array.isArray(response.data)) {
+        setDevices(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading project devices:', error);
+    }
+  };
+
+  const loadAvailableDevices = async () => {
+    try {
+      if (!project) return;
+      
+      const response = await deviceAPI.getDevicesByOrganization(project.organization.id);
+      if (response.data && Array.isArray(response.data)) {
+        // Filter out devices already assigned to this project
+        const assignedDeviceUuids = devices.map(d => d.uuid);
+        const available = response.data.filter(d => !assignedDeviceUuids.includes(d.uuid));
+        setAvailableDevices(available);
+      }
+    } catch (error) {
+      console.error('Error loading available devices:', error);
+    }
+  };
+
+  const handleAssignDevices = async () => {
+    try {
+      // Assign each selected device to the project
+      for (const deviceUuid of selectedDevices) {
+        await deviceAPI.assignToProject(deviceUuid, projectUuid);
+      }
+      
+      setShowAssignDeviceModal(false);
+      setSelectedDevices([]);
+      await loadProjectDevices();
+    } catch (error) {
+      console.error('Error assigning devices:', error);
+      alert('Failed to assign devices. Please try again.');
+    }
+  };
+
+  const handleUnassignDevice = async (deviceUuid) => {
+    if (!window.confirm('Are you sure you want to unassign this device from the project?')) {
+      return;
+    }
+
+    try {
+      await deviceAPI.unassignFromProject(deviceUuid, projectUuid);
+      await loadProjectDevices();
+    } catch (error) {
+      console.error('Error unassigning device:', error);
+      alert('Failed to unassign device. Please try again.');
+    }
+  };
 
   const handleCreateFlow = async () => {
     try {
@@ -202,6 +266,10 @@ function ProjectDashboard() {
             <p>Dashboard{dashboards.length !== 1 ? 's' : ''}</p>
           </div>
           <div className="stat-card">
+            <h3>{devices.length}</h3>
+            <p>Device{devices.length !== 1 ? 's' : ''}</p>
+          </div>
+          <div className="stat-card">
             <h3>{project.status}</h3>
             <p>Status</p>
           </div>
@@ -272,6 +340,51 @@ function ProjectDashboard() {
             )}
           </div>
         </div>
+
+        <div className="action-section">
+          <h3>Devices</h3>
+          <p>Manage IoT devices for this project</p>
+          <button 
+            className="primary-button" 
+            onClick={() => {
+              loadAvailableDevices();
+              setShowAssignDeviceModal(true);
+            }}
+          >
+            Assign Device
+          </button>
+          <div className="items-list">
+            {devices.map(device => (
+              <div key={device.uuid} className="item-card device-item">
+                <div className="item-content">
+                  <h4>{device.name}</h4>
+                  <p>{device.description}</p>
+                  <div className="device-status">
+                    <span className={`status-badge ${device.status}`}>
+                      {device.status}
+                    </span>
+                    <span className={`active-badge ${device.is_active ? 'active' : 'inactive'}`}>
+                      {device.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <span className="item-meta">
+                    Last seen: {device.last_seen ? new Date(device.last_seen).toLocaleDateString() : 'Never'}
+                  </span>
+                </div>
+                <button 
+                  className="delete-button"
+                  onClick={() => handleUnassignDevice(device.uuid)}
+                  title="Unassign Device"
+                >
+                  🚫
+                </button>
+              </div>
+            ))}
+            {devices.length === 0 && (
+              <p className="empty-state">No devices assigned yet. Assign devices to start collecting data!</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -309,6 +422,62 @@ function ProjectDashboard() {
       <main className="project-main">
         {activeView === 'overview' && renderOverview()}
       </main>
+
+      {/* Assign Device Modal */}
+      {showAssignDeviceModal && (
+        <div className="modal-overlay" onClick={() => setShowAssignDeviceModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Assign Devices to Project</h2>
+              <button 
+                className="close-button"
+                onClick={() => setShowAssignDeviceModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              {availableDevices.length === 0 ? (
+                <p>No available devices found. Create devices first in the Devices page.</p>
+              ) : (
+                <div className="device-selection">
+                  <p>Select devices to assign to this project:</p>
+                  <div className="device-checkboxes">
+                    {availableDevices.map(device => (
+                      <label key={device.uuid} className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={selectedDevices.includes(device.uuid)}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setSelectedDevices([...selectedDevices, device.uuid]);
+                            } else {
+                              setSelectedDevices(selectedDevices.filter(d => d !== device.uuid));
+                            }
+                          }}
+                        />
+                        <div className="device-info">
+                          <span className="device-name">{device.name}</span>
+                          <span className="device-description">{device.description}</span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="primary-button"
+                onClick={handleAssignDevices}
+                disabled={selectedDevices.length === 0 || availableDevices.length === 0}
+              >
+                Assign Selected Devices
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

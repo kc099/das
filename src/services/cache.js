@@ -1,5 +1,5 @@
 // Centralized cache service for dashboard data
-import { authAPI, mqttAPI } from './api';
+import { authAPI, mqttAPI, deviceAPI } from './api';
 
 class CacheService {
   constructor() {
@@ -200,22 +200,37 @@ class CacheService {
   // Fetch devices summary
   async getDevices() {
     return this.get('devices', async () => {
-      const response = await authAPI.get('/devices/');
-      if (response.data.status === 'success') {
-        // Cache only summary data for tiles
+      try {
+        const response = await deviceAPI.getDevices();
+        if (response.data && Array.isArray(response.data)) {
+          // Cache only summary data for tiles
+          return {
+            count: response.data.length,
+            devices: response.data.map(device => ({
+              uuid: device.uuid,
+              name: device.name,
+              description: device.description,
+              status: device.status,
+              organization_name: device.organization_name,
+              project_count: device.project_count,
+              is_active: device.is_active,
+              created_at: device.created_at,
+              // Don't cache sensitive device details like tokens
+            }))
+          };
+        }
         return {
-          count: response.data.devices.length,
-          devices: response.data.devices.map(device => ({
-            id: device.id,
-            device_id: device.device_id,
-            name: device.name,
-            status: device.status,
-            created_at: device.created_at,
-            // Don't cache sensitive device details
-          }))
+          count: 0,
+          devices: []
+        };
+      } catch (error) {
+        console.error('Error fetching devices:', error);
+        // Return empty devices list instead of failing
+        return {
+          count: 0,
+          devices: []
         };
       }
-      throw new Error('Failed to fetch devices');
     });
   }
 

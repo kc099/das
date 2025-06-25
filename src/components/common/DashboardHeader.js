@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { organizationAPI, projectAPI, mqttAPI } from '../../services/api';
+import cacheService from '../../services/cache';
 
 const DashboardHeader = ({ user, subscriptionType, onLogout }) => {
   const navigate = useNavigate();
@@ -9,7 +10,7 @@ const DashboardHeader = ({ user, subscriptionType, onLogout }) => {
     organizations: 0,
     projects: 0,
     clusters: 0,
-    devices: 0, // placeholder since no device API yet
+    devices: 0,
     loading: true
   });
   const dropdownRef = useRef(null);
@@ -50,11 +51,15 @@ const DashboardHeader = ({ user, subscriptionType, onLogout }) => {
           ? clustersResponse.data.length 
           : 0;
 
+        // Fetch devices using cache service
+        const devicesData = await cacheService.getDevices();
+        const devicesCount = devicesData.count || 0;
+
         setOverviewData({
           organizations: organizationsCount,
           projects: projectsCount,
           clusters: clustersCount,
-          devices: 0, // Placeholder until device API is implemented
+          devices: devicesCount,
           loading: false
         });
       } catch (error) {
@@ -150,6 +155,16 @@ const DashboardHeader = ({ user, subscriptionType, onLogout }) => {
                     <div className="action-text">
                       <span className="action-title">Organizations</span>
                       <span className="action-subtitle">Manage organizations</span>
+                    </div>
+                  </button>
+                  <button 
+                    className="action-item"
+                    onClick={() => handleDropdownItemClick(() => navigate('/devices'))}
+                  >
+                    <span className="action-icon">🏠</span>
+                    <div className="action-text">
+                      <span className="action-title">Devices</span>
+                      <span className="action-subtitle">Manage IoT devices</span>
                     </div>
                   </button>
                   <button 
