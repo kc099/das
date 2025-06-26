@@ -23,7 +23,7 @@ const BarChartWidget = ({ widget, data = [] }) => {
         </div>
       </div>
       <div className="widget-content">
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
             <XAxis 

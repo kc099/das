@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { authAPI, projectAPI, dashboardAPI } from '../services/api';
+import { projectAPI, dashboardAPI } from '../services/api';
 import WidgetFactory from '../components/widgets/WidgetFactory';
 import './DashboardCreator.css';
 import '../components/widgets/Widgets.css';
@@ -141,7 +141,14 @@ function DashboardCreator() {
         if (templateId) {
           const templateResponse = await dashboardAPI.getTemplate(templateId);
           if (templateResponse.data.status === 'success') {
-            setCurrentTemplate(templateResponse.data.template);
+            const template = templateResponse.data.template;
+            // Ensure widgets and layout are always arrays
+            setCurrentTemplate({
+              ...template,
+              widgets: Array.isArray(template.widgets) ? template.widgets : [],
+              layout: Array.isArray(template.layout) ? template.layout : [],
+              datasources: Array.isArray(template.datasources) ? template.datasources : []
+            });
           }
         } else {
           // Create a new empty template for the project
@@ -187,9 +194,9 @@ function DashboardCreator() {
       x: 0,
       y: Infinity,
       w: 6,
-      h: 4,
-      minW: 2,
-      minH: 2
+      h: 8,
+      minW: 3,
+      minH: 6
     };
 
     setCurrentTemplate(prev => ({
@@ -239,8 +246,8 @@ function DashboardCreator() {
   const handleDeleteWidget = (widgetId) => {
     setCurrentTemplate(prev => ({
       ...prev,
-      widgets: prev.widgets.filter(w => w.id !== widgetId),
-      layout: prev.layout.filter(l => l.i !== widgetId)
+      widgets: (prev.widgets || []).filter(w => w.id !== widgetId),
+      layout: (prev.layout || []).filter(l => l.i !== widgetId)
     }));
   };
 
@@ -362,35 +369,30 @@ function DashboardCreator() {
                     className="widgets-grid"
                     layout={currentTemplate.layout || []}
                     cols={12}
-                    rowHeight={30}
+                    rowHeight={60}
                     compactType="vertical"
                     isResizable
                     isDraggable
                     onLayoutChange={handleLayoutChange}
-                    margin={[10, 10]}
+                    margin={[16, 16]}
                   >
-                    {currentTemplate.widgets.map(widget => (
-                      <div key={widget.id} className="widget-container">
-                        <div className="widget-header">
-                          <span className="widget-title">{widget.title}</span>
-                          <button 
-                            className="delete-widget-btn"
-                            onClick={() => handleDeleteWidget(widget.id)}
-                            title="Delete Widget"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        <div className="widget-content">
-                          <WidgetFactory
-                            key={widget.id}
-                            widget={{
-                              ...widget,
-                              data: []
-                            }}
-                            onUpdate={() => {}}
-                          />
-                        </div>
+                    {(currentTemplate.widgets || []).map(widget => (
+                      <div key={widget.id} className="grid-widget-wrapper">
+                        <button 
+                          className="delete-widget-btn"
+                          onClick={() => handleDeleteWidget(widget.id)}
+                          title="Delete Widget"
+                        >
+                          ✕
+                        </button>
+                        <WidgetFactory
+                          key={widget.id}
+                          widget={{
+                            ...widget,
+                            data: []
+                          }}
+                          onUpdate={() => {}}
+                        />
                       </div>
                     ))}
                   </ReactGridLayout>

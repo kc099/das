@@ -51,7 +51,7 @@ const PieChartWidget = ({ widget, data = [] }) => {
         </div>
       </div>
       <div className="widget-content">
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={dataWithColors}
