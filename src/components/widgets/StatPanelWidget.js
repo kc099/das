@@ -6,13 +6,12 @@ const StatPanelContent = ({ data }) => {
   const sampleData = { 
     value: 1247, 
     unit: 'devices', 
-    label: 'Connected Devices',
     trend: '+12%',
     trendDirection: 'up'
   };
   
   const statData = Object.keys(data).length > 0 ? data : sampleData;
-  const { value, unit, label, trend, trendDirection } = statData;
+  const { value, unit, trend, trendDirection } = statData;
   
   const getTrendColor = (direction) => {
     switch (direction) {
@@ -37,9 +36,7 @@ const StatPanelContent = ({ data }) => {
         {unit && <span className="stat-unit">{unit}</span>}
       </div>
       
-      {label && (
-        <div className="stat-label">{label}</div>
-      )}
+
       
       {trend && (
         <div className="stat-trend" style={{ color: getTrendColor(trendDirection) }}>
@@ -80,6 +77,7 @@ const StatPanelWidget = ({ widget, data = {} }) => {
       headerActions={headerActions}
       footer={footer}
       className="widget-container"
+      data-widget-type={widget.type}
     >
       <StatPanelContent data={data} />
     </BaseWidget>

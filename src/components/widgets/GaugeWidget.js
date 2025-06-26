@@ -8,7 +8,10 @@ const GaugeWidget = ({ widget, data = {} }) => {
   
   const { value = 0, max = 100, unit = '', label = 'Value' } = gaugeData;
   const percentage = Math.min((value / max) * 100, 100);
-  const angle = (percentage / 100) * 180; // Half circle gauge
+  
+  // For semicircle gauge: 0% = leftmost (270°), 100% = rightmost (90°)
+  // Convert percentage to angle in standard coordinate system
+  const needleAngle = 90 - (percentage / 100) * 180;
   
   // Calculate color based on percentage
   const getGaugeColor = (percent) => {
@@ -20,10 +23,12 @@ const GaugeWidget = ({ widget, data = {} }) => {
   const gaugeColor = getGaugeColor(percentage);
   
   return (
-    <div className="widget-container">
+    <div className="widget-container" data-widget-type={widget.type}>
       <div className="widget-header">
-        <h3 className="widget-title">{widget.title || 'Gauge Chart'}</h3>
-        <div className="widget-controls">
+        <div className="widget-header-content">
+          <div className="widget-title-section">
+            <h3 className="widget-title">{widget.title || 'Gauge Chart'}</h3>
+          </div>
           <span className="widget-type-badge">⏲️ Gauge</span>
         </div>
       </div>
@@ -45,7 +50,7 @@ const GaugeWidget = ({ widget, data = {} }) => {
               stroke={gaugeColor}
               strokeWidth="12"
               strokeLinecap="round"
-              strokeDasharray={`${(angle / 180) * 251.3} 251.3`}
+              strokeDasharray={`${(percentage / 100) * 251.3} 251.3`}
               style={{
                 transition: 'stroke-dasharray 0.5s ease-in-out'
               }}
@@ -56,10 +61,10 @@ const GaugeWidget = ({ widget, data = {} }) => {
             <line
               x1="100"
               y1="100"
-              x2={100 + 60 * Math.cos((angle - 90) * Math.PI / 180)}
-              y2={100 + 60 * Math.sin((angle - 90) * Math.PI / 180)}
-              stroke="#374151"
-              strokeWidth="2"
+              x2={100 + 60 * Math.cos(needleAngle * Math.PI / 180)}
+              y2={100 + 60 * Math.sin(needleAngle * Math.PI / 180)}
+              stroke="#ef4444"
+              strokeWidth="4"
               strokeLinecap="round"
               style={{
                 transition: 'all 0.5s ease-in-out'

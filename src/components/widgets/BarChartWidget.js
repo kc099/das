@@ -15,10 +15,12 @@ const BarChartWidget = ({ widget, data = [] }) => {
   const chartData = data.length > 0 ? data : sampleData;
 
   return (
-    <div className="widget-container">
+    <div className="widget-container" data-widget-type={widget.type}>
       <div className="widget-header">
-        <h3 className="widget-title">{widget.title || 'Bar Chart'}</h3>
-        <div className="widget-controls">
+        <div className="widget-header-content">
+          <div className="widget-title-section">
+            <h3 className="widget-title">{widget.title || 'Bar Chart'}</h3>
+          </div>
           <span className="widget-type-badge">📊 Bar Chart</span>
         </div>
       </div>

@@ -9,7 +9,34 @@
   width: 100%;
   display: flex;
   flex-direction: column;
+}
+
+/* Widget Type Specific Sizing */
+.widget-container[data-widget-type="time_series"] .widget-content,
+.widget-container[data-widget-type="bar_chart"] .widget-content {
   min-height: 300px;
+}
+
+.widget-container[data-widget-type="pie_chart"] .widget-content {
+  min-height: 250px;
+  align-items: center;
+}
+
+.widget-container[data-widget-type="gauge"] .widget-content {
+  min-height: 200px;
+  aspect-ratio: 1;
+}
+
+.widget-container[data-widget-type="stat_panel"] .widget-content {
+  min-height: 120px;
+  align-items: center;
+  justify-content: center;
+}
+
+.widget-container[data-widget-type="table"] .widget-content {
+  min-height: 200px;
+  align-items: stretch;
+  padding: 0.5rem;
 }
 
 .widget-container:hover {
@@ -18,36 +45,63 @@
 }
 
 .widget-header {
-  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  background: linear-gradient(135deg, var(--gradient-start, #10b981), var(--gradient-end, #047857));
   color: white;
-  padding: 1rem;
+  padding: 1rem 3rem 1rem 1rem; /* Extra right padding for delete button */
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
+  min-height: 60px; /* Ensure consistent height */
+  border-radius: 0.75rem 0.75rem 0 0; /* Round top corners */
+}
+
+.widget-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 1rem;
+}
+
+.widget-title-section {
+  flex: 1;
+  min-width: 0; /* Allow text truncation */
 }
 
 .widget-title {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: calc(100% - 3rem); /* Reserve space for controls */
+  color: white !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .widget-type-badge {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.3);
   padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.8rem;
-  font-weight: 500;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0; /* Prevent shrinking */
+  color: white !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .widget-content {
   flex: 1;
   padding: 1rem;
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  min-height: 200px;
   overflow: hidden;
+  min-height: 0; /* Allow flex shrinking */
 }
 
 .widget-footer {

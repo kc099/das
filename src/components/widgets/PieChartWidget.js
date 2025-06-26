@@ -43,10 +43,12 @@ const PieChartWidget = ({ widget, data = [] }) => {
   };
 
   return (
-    <div className="widget-container">
+    <div className="widget-container" data-widget-type={widget.type}>
       <div className="widget-header">
-        <h3 className="widget-title">{widget.title || 'Pie Chart'}</h3>
-        <div className="widget-controls">
+        <div className="widget-header-content">
+          <div className="widget-title-section">
+            <h3 className="widget-title">{widget.title || 'Pie Chart'}</h3>
+          </div>
           <span className="widget-type-badge">🥧 Pie Chart</span>
         </div>
       </div>

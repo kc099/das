@@ -179,6 +179,18 @@ function DashboardCreator() {
     initializeDashboardCreator();
   }, [navigate, projectUuid, templateId]);
 
+  const getWidgetDimensions = (widgetType) => {
+    const dimensionMap = {
+      'time_series': { w: 8, h: 8, minW: 4, minH: 6 },
+      'bar_chart': { w: 6, h: 8, minW: 4, minH: 6 },
+      'pie_chart': { w: 6, h: 6, minW: 3, minH: 4 },
+      'gauge': { w: 4, h: 4, minW: 3, minH: 3 },
+      'stat_panel': { w: 3, h: 3, minW: 2, minH: 2 },
+      'table': { w: 8, h: 6, minW: 4, minH: 4 }
+    };
+    return dimensionMap[widgetType] || { w: 6, h: 6, minW: 3, minH: 4 };
+  };
+
   const handleWidgetDrop = (widgetType) => {
     const newWidget = {
       id: `widget-${Date.now()}`,
@@ -189,14 +201,12 @@ function DashboardCreator() {
       }
     };
 
+    const dimensions = getWidgetDimensions(widgetType.value);
     const newLayout = {
       i: newWidget.id,
       x: 0,
       y: Infinity,
-      w: 6,
-      h: 8,
-      minW: 3,
-      minH: 6
+      ...dimensions
     };
 
     setCurrentTemplate(prev => ({
@@ -243,7 +253,13 @@ function DashboardCreator() {
     }
   };
 
-  const handleDeleteWidget = (widgetId) => {
+  const handleDeleteWidget = (widgetId, event) => {
+    // Prevent event propagation to avoid triggering drag
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
     setCurrentTemplate(prev => ({
       ...prev,
       widgets: (prev.widgets || []).filter(w => w.id !== widgetId),
@@ -369,18 +385,19 @@ function DashboardCreator() {
                     className="widgets-grid"
                     layout={currentTemplate.layout || []}
                     cols={12}
-                    rowHeight={60}
+                    rowHeight={40}
                     compactType="vertical"
                     isResizable
                     isDraggable
                     onLayoutChange={handleLayoutChange}
-                    margin={[16, 16]}
+                    margin={[12, 12]}
                   >
                     {(currentTemplate.widgets || []).map(widget => (
                       <div key={widget.id} className="grid-widget-wrapper">
                         <button 
                           className="delete-widget-btn"
-                          onClick={() => handleDeleteWidget(widget.id)}
+                          onClick={(e) => handleDeleteWidget(widget.id, e)}
+                          onMouseDown={(e) => e.stopPropagation()}
                           title="Delete Widget"
                         >
                           ✕
