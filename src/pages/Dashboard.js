@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { authAPI, projectAPI, organizationAPI } from '../services/api';
 import cacheService from '../services/cache';
 import DashboardHeader from '../components/common/DashboardHeader';
 import DashboardSidebar from '../components/common/DashboardSidebar';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { useStatActions } from '../hooks/useDashboardStats';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -15,18 +16,13 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [overviewStats, setOverviewStats] = useState({
-    organizations: 0,
-    projects: 0,
-    mqttClusters: 0,
-    connectedDevices: 0
-  });
   const [newProject, setNewProject] = useState({
     name: '',
     description: '',
     organization_id: '',
     tags: []
   });
+  const { updateStat, incrementStat } = useStatActions();
 
   useEffect(() => {
     const initializeDashboard = async () => {
@@ -51,11 +47,8 @@ function Dashboard() {
             setNewProject(prev => ({ ...prev, organization_id: orgResponse.data.organizations[0].id }));
           }
           
-          // Update overview stats
-          setOverviewStats(prev => ({
-            ...prev,
-            organizations: orgResponse.data.organizations.length
-          }));
+          // Update stats in store
+          updateStat('organizations', orgResponse.data.organizations.length);
         }
 
         // Fetch user's projects
@@ -63,20 +56,9 @@ function Dashboard() {
         if (projectsResponse.data.status === 'success') {
           setProjects(projectsResponse.data.projects);
           
-          // Update overview stats
-          setOverviewStats(prev => ({
-            ...prev,
-            projects: projectsResponse.data.projects.length
-          }));
+          // Update stats in store
+          updateStat('projects', projectsResponse.data.projects.length);
         }
-
-        // Load cached stats for devices and MQTT clusters
-        const cachedStats = await cacheService.getOverviewStats();
-        setOverviewStats(prev => ({
-          ...prev,
-          mqttClusters: cachedStats.mqttClusters,
-          connectedDevices: cachedStats.connectedDevices
-        }));
 
       } catch (error) {
         console.error('Dashboard initialization error:', error);
@@ -90,7 +72,7 @@ function Dashboard() {
     };
 
     initializeDashboard();
-  }, [navigate]);
+  }, [navigate, updateStat]);
 
   const handleLogout = async () => {
     try {
@@ -112,10 +94,8 @@ function Dashboard() {
       const response = await projectAPI.createProject(newProject);
       if (response.data.status === 'success') {
         setProjects([...projects, response.data.project]);
-        setOverviewStats(prev => ({
-          ...prev,
-          projects: prev.projects + 1
-        }));
+        // Increment projects count in store
+        incrementStat('projects');
         setShowCreateModal(false);
         setNewProject({
           name: '',

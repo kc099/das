@@ -318,6 +318,33 @@ class CacheService {
       console.log('Background cache preload error:', error);
     }
   }
+
+  // Get overview stats (for backward compatibility)
+  async getOverviewStats() {
+    try {
+      const cachedStats = this.cache.get('overviewStats');
+      if (cachedStats) {
+        return cachedStats;
+      }
+      // Return default if no cache
+      return {
+        connectedDevices: 0,
+        mqttClusters: 0
+      };
+    } catch (error) {
+      console.error('Error getting overview stats:', error);
+      return {
+        connectedDevices: 0,
+        mqttClusters: 0
+      };
+    }
+  }
+
+  // Set overview stats (for backward compatibility)
+  setOverviewStats(stats) {
+    this.cache.set('overviewStats', stats);
+    this.cacheTimestamps.set('overviewStats', Date.now());
+  }
 }
 
 // Create singleton instance

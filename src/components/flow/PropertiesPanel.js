@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { dashboardAPI } from '../../services/api';
 import './PropertiesPanel.css';
 
 function PropertiesPanel({ selectedNode, onUpdateNode, onClose, projectId }) {

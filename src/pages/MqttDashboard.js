@@ -9,7 +9,6 @@ import './MqttDashboard.css';
 function MqttDashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [clusters, setClusters] = useState([]);
   const [currentCluster, setCurrentCluster] = useState(null);
   const [info, setInfo] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('Not Connected');

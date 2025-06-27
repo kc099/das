@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import QueryProvider from './providers/QueryProvider';
 import Homepage from './pages/Homepage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -15,7 +16,8 @@ import './App.css';
 
 function App() {
   return (
-    <Router>
+    <QueryProvider>
+      <Router>
       <Routes>
         <Route path="/" element={<Homepage />} />
         <Route path="/login" element={<Login />} />
@@ -45,7 +47,8 @@ function App() {
         <Route path="/mqtt-clusters" element={<MqttClustersPage />} />
         <Route path="/mqtt-dashboard" element={<MqttDashboard />} />
       </Routes>
-    </Router>
+      </Router>
+    </QueryProvider>
   );
 }
 
