@@ -22,7 +22,6 @@ const TimeSeriesWidget = ({ widget, data = [] }) => {
           <div className="widget-title-section">
             <h3 className="widget-title">{widget.title || 'Time Series Chart'}</h3>
           </div>
-          <span className="widget-type-badge">📈 Time Series</span>
         </div>
       </div>
       <div className="widget-content">

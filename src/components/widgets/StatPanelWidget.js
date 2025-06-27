@@ -63,10 +63,6 @@ const StatPanelContent = ({ data }) => {
 };
 
 const StatPanelWidget = ({ widget, data = {} }) => {
-  const headerActions = (
-    <span className="widget-type-badge">🔢 Stat Panel</span>
-  );
-
   const footer = widget.query ? (
     <small className="widget-query">Query: {widget.query}</small>
   ) : null;
@@ -74,7 +70,6 @@ const StatPanelWidget = ({ widget, data = {} }) => {
   return (
     <BaseWidget
       title={widget.title || 'Stat Panel'}
-      headerActions={headerActions}
       footer={footer}
       className="widget-container"
       data-widget-type={widget.type}

@@ -398,9 +398,9 @@ function DashboardCreator() {
                           className="delete-widget-btn"
                           onClick={(e) => handleDeleteWidget(widget.id, e)}
                           onMouseDown={(e) => e.stopPropagation()}
-                          title="Delete Widget"
+                          title="Remove Widget"
                         >
-                          ✕
+                          −
                         </button>
                         <WidgetFactory
                           key={widget.id}

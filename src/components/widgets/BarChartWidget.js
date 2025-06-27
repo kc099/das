@@ -21,7 +21,6 @@ const BarChartWidget = ({ widget, data = [] }) => {
           <div className="widget-title-section">
             <h3 className="widget-title">{widget.title || 'Bar Chart'}</h3>
           </div>
-          <span className="widget-type-badge">📊 Bar Chart</span>
         </div>
       </div>
       <div className="widget-content">

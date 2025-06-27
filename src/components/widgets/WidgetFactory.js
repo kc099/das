@@ -23,7 +23,7 @@ const TableWidget = ({ widget, data = [] }) => {
           <div className="widget-title-section">
             <h3 className="widget-title">{widget.title || 'Data Table'}</h3>
           </div>
-          <span className="widget-type-badge">📋 Table</span>
+
         </div>
       </div>
       <div className="widget-content">
@@ -65,7 +65,7 @@ const HistogramWidget = ({ widget, data = [] }) => {
           <div className="widget-title-section">
             <h3 className="widget-title">{widget.title || 'Histogram'}</h3>
           </div>
-          <span className="widget-type-badge">📊 Histogram</span>
+
         </div>
       </div>
       <div className="widget-content">
@@ -85,7 +85,7 @@ const XYChartWidget = ({ widget, data = [] }) => {
           <div className="widget-title-section">
             <h3 className="widget-title">{widget.title || 'XY Chart'}</h3>
           </div>
-          <span className="widget-type-badge">📈 XY Chart</span>
+
         </div>
       </div>
       <div className="widget-content">
@@ -105,7 +105,7 @@ const TrendChartWidget = ({ widget, data = [] }) => {
           <div className="widget-title-section">
             <h3 className="widget-title">{widget.title || 'Trend Chart'}</h3>
           </div>
-          <span className="widget-type-badge">📉 Trend Chart</span>
+
         </div>
       </div>
       <div className="widget-content">

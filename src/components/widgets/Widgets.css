@@ -47,7 +47,7 @@
 .widget-header {
   background: linear-gradient(135deg, var(--gradient-start, #10b981), var(--gradient-end, #047857));
   color: white;
-  padding: 1rem 3rem 1rem 1rem; /* Extra right padding for delete button */
+  padding: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -76,7 +76,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: calc(100% - 3rem); /* Reserve space for controls */
   color: white !important;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }

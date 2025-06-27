@@ -29,7 +29,6 @@ const GaugeWidget = ({ widget, data = {} }) => {
           <div className="widget-title-section">
             <h3 className="widget-title">{widget.title || 'Gauge Chart'}</h3>
           </div>
-          <span className="widget-type-badge">⏲️ Gauge</span>
         </div>
       </div>
       <div className="widget-content">
