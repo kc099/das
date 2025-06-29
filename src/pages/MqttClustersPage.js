@@ -381,6 +381,14 @@ function MqttClustersPage() {
               <h1 className="page-title">MQTT Clusters</h1>
               <p className="page-subtitle">Manage your MQTT brokers and connections</p>
             </div>
+            <div className="page-actions">
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowCreateModal(true)}
+              >
+                + New Cluster
+              </button>
+            </div>
           </div>
 
           {/* Cluster Grid */}
@@ -445,11 +453,6 @@ function MqttClustersPage() {
                 </div>
               ))}
           </div>
-
-            {/* Floating Add Button */}
-            <button className="floating-add-btn" onClick={() => setShowCreateModal(true)}>
-              <span>+</span>
-            </button>
 
             {/* Create Cluster Modal */}
             {showCreateModal && (
