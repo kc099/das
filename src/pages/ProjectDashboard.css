@@ -55,8 +55,6 @@
   margin: 0;
 }
 
-
-
 .project-main {
   padding: 2rem;
 }
@@ -273,24 +271,26 @@
   gap: 1rem;
 }
 
+/* Delete Project button: neutral grey -> red on hover */
 .delete-project-button {
-  background-color: #dc3545;
-  color: white;
-  border: none;
+  background: var(--bg-light, #f3f4f6);
+  color: var(--text-primary, #1a1a1a);
+  border: 1px solid var(--border-medium, #d1d5db);
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   display: flex;
   align-items: center;
   gap: 0.25rem;
 }
 
 .delete-project-button:hover {
-  background-color: #c82333;
-  transform: translateY(-1px);
+  background: #dc2626; /* red */
+  color: white;
+  border-color: #dc2626;
 }
 
 @media (max-width: 768px) {
@@ -322,4 +322,44 @@
   .project-main {
     padding: 1rem;
   }
+}
+
+/* ------------------------------------------------------------------
+   PAGE-SPECIFIC OVERRIDES & HEADER LAYOUT
+   ------------------------------------------------------------------ */
+
+/* Header should place the delete button to the far right */
+.uniform-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.uniform-page-header-content {
+  flex: 1;
+}
+
+.uniform-page-actions {
+  flex-shrink: 0;
+}
+
+/* Ensure the green theme for primary buttons and remove hover color swap */
+.section-card .btn-primary,
+.section-card .btn-primary:hover,
+.section-card .btn-primary:focus,
+.section-card .btn-primary:active,
+.btn-primary.section-action,
+.btn-primary.section-action:hover {
+  background: var(--primary-color) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Assign-device & other primary buttons outside section cards */
+.delete-project-button {
+  /* keep rule from earlier block; no change here but ensure alignment */
 } 

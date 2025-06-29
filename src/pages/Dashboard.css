@@ -18,8 +18,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
   color: var(--text-primary);
+  min-height: 300px;
 }
 
 .spinner {
@@ -227,13 +227,13 @@
 }
 
 .sidebar-stat-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 0.9rem;
   flex-shrink: 0;
 }
 
@@ -260,20 +260,21 @@
 .sidebar-stat-content {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .sidebar-stat-label {
+  font-size: 0.875rem;
   color: var(--text-secondary);
-  font-size: 0.8rem;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
 }
 
 .sidebar-stat-value {
-  color: var(--text-primary);
-  font-size: 1.375rem;
+  font-size: 0.875rem;
   font-weight: 700;
-  line-height: 1;
+  color: var(--primary-color);
+  margin-left: auto;
 }
 
 /* Main Content with Sidebar */
@@ -545,8 +546,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
   color: var(--text-primary);
+  min-height: 300px;
 }
 
 .spinner {
@@ -1427,9 +1428,7 @@
 
 /* Quick Actions */
 .quick-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: none !important;
 }
 
 .action-item {

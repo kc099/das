@@ -4,8 +4,13 @@ import { authAPI, deviceAPI, organizationAPI } from '../services/api';
 import cacheService from '../services/cache';
 import DashboardHeader from '../components/common/DashboardHeader';
 import DashboardSidebar from '../components/common/DashboardSidebar';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import './Devices.css';
+import LoadingLayout from '../components/common/LoadingLayout';
+
+import '../styles/DevicesPage.css';
+import '../styles/BaseLayout.css';
+import '../styles/DevicesPage.css';
+import useDashboardStore from '../store/dashboardStore';
+import { useStatActions } from '../hooks/useDashboardStats';
 
 function Devices() {
   const navigate = useNavigate();
@@ -15,7 +20,7 @@ function Devices() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showTokenModal, setShowTokenModal] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { sidebarOpen, setSidebarOpen, toggleSidebar } = useDashboardStore();
   const [newDevice, setNewDevice] = useState({
     name: '',
     description: '',
@@ -25,6 +30,7 @@ function Devices() {
   const [createdDevice, setCreatedDevice] = useState(null);
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [availableProjects, setAvailableProjects] = useState([]);
+  const { incrementStat, decrementStat, refresh: refreshStats } = useStatActions();
 
   useEffect(() => {
     const initializeDevices = async () => {
@@ -126,6 +132,8 @@ function Devices() {
         setSelectedProjects([]);
         await loadDevices();
         cacheService.invalidate('devices');
+        incrementStat('connectedDevices');
+        refreshStats();
       }
     } catch (error) {
       console.error('Error creating device:', error);
@@ -142,6 +150,8 @@ function Devices() {
       await deviceAPI.deleteDevice(deviceUuid);
       await loadDevices();
       cacheService.invalidate('devices');
+      decrementStat('connectedDevices');
+      refreshStats();
     } catch (error) {
       console.error('Error deleting device:', error);
       alert('Failed to delete device. Please try again.');
@@ -168,35 +178,32 @@ function Devices() {
   };
 
   if (loading) {
-    return (
-      <div className="dashboard-container">
-        <LoadingSpinner message="Loading your devices..." />
-      </div>
-    );
+    return <LoadingLayout user={user} message="Loading your devices..." />;
   }
 
   if (!user) {
     return (
-      <div className="dashboard-container">
-        <div className="error-state">
-          <h2>Access Denied</h2>
-          <p>Please log in to access your devices.</p>
-          <button onClick={() => navigate('/login')}>Go to Login</button>
+      <div className="page-container">
+        <div className="empty-state">
+          <div className="empty-icon">🔒</div>
+          <h2 className="empty-title">Access Denied</h2>
+          <p className="empty-description">Please log in to access your devices.</p>
+          <button className="btn btn-primary" onClick={() => navigate('/login')}>Go to Login</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="dashboard-container">
+    <div className="page-container">
       <DashboardHeader 
         user={user} 
         subscriptionType="free"
         onLogout={handleLogout}
-        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        onToggleSidebar={toggleSidebar}
       />
       
-      <div className="dashboard-layout">
+      <div className="layout">
         {/* Shared Sidebar Component */}
         <DashboardSidebar 
           isOpen={sidebarOpen} 
@@ -204,15 +211,15 @@ function Devices() {
         />
 
         {/* Main Content */}
-        <main className="dashboard-main">
-          <div className="dashboard-content">
-            <div className="projects-header">
-              <div>
-                <h1>Your Devices</h1>
-                <p>Manage your IoT devices and their project assignments</p>
-              </div>
+        <main className="main-content">
+          <div className="page-header">
+            <div className="page-header-content">
+              <h1 className="page-title">Your Devices</h1>
+              <p className="page-subtitle">Manage your IoT devices and their project assignments</p>
+            </div>
+            <div className="page-actions">
               <button 
-                className="create-project-button"
+                className="btn btn-primary"
                 onClick={() => {
                   setShowCreateModal(true);
                   if (organizations.length > 0) {
@@ -223,48 +230,52 @@ function Devices() {
                 + New Device
               </button>
             </div>
+          </div>
 
-            {devices.length === 0 ? (
-              <div className="empty-projects">
-                <div className="empty-icon">📱</div>
-                <h2>No Devices Yet</h2>
-                <p>Create your first IoT device to start collecting data and building applications</p>
-                <button 
-                  className="primary-button"
-                  onClick={() => {
-                    setShowCreateModal(true);
-                    if (organizations.length > 0) {
-                      loadProjectsForOrganization(organizations[0].id);
-                    }
-                  }}
-                >
-                  Create Your First Device
-                </button>
-              </div>
-            ) : (
-              <div className="projects-grid">
-                {devices.map(device => (
-                  <div key={device.uuid} className="project-card">
-                    <div className="project-card-header">
-                      <h3>{device.name}</h3>
-                      <span className={`status-badge ${device.status}`}>
-                        {device.status}
-                      </span>
+          {devices.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">📱</div>
+              <h2 className="empty-title">No Devices Yet</h2>
+              <p className="empty-description">Create your first IoT device to start collecting data and building applications</p>
+              <button 
+                className="btn btn-primary"
+                onClick={() => {
+                  setShowCreateModal(true);
+                  if (organizations.length > 0) {
+                    loadProjectsForOrganization(organizations[0].id);
+                  }
+                }}
+              >
+                Create Your First Device
+              </button>
+            </div>
+          ) : (
+            <div className="devices-grid">
+              {devices.map(device => (
+                <div key={device.uuid} className="device-card">
+                  <div className="card-header">
+                    <h3 className="card-title">{device.name}</h3>
+                    <span className={`status-badge ${device.status === 'active' ? 'status-success' : device.status === 'offline' ? 'status-danger' : 'status-neutral'}`}>
+                      {device.status}
+                    </span>
+                  </div>
+                  <div className="card-content">
+                    <p className="card-description">{device.description || 'No description provided'}</p>
+                    <div className="card-stats">
+                      <div className="stat">
+                        <span className="stat-value">{device.projects?.length || 0}</span>
+                        <span className="stat-label">Projects</span>
+                      </div>
+                      <div className="stat">
+                        <span className="stat-value">{device.token ? '••••' : 'None'}</span>
+                        <span className="stat-label">Token</span>
+                      </div>
                     </div>
-                    <p className="project-description">{device.description || 'No description provided'}</p>
-                    <div className="project-stats">
-                      <span>{device.projects?.length || 0} projects</span>
-                      <span>Token: {device.token ? '••••••••' : 'None'}</span>
-                    </div>
-                    <div className="project-meta">
-                      <span className="organization">{device.organization?.name}</span>
-                      <span className="updated">
-                        Updated {new Date(device.updated_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="device-actions">
+                  </div>
+                  <div className="card-footer">
+                    <div style={{display: 'flex', gap: '0.5rem', flex: 1}}>
                       <button 
-                        className="action-button"
+                        className="btn btn-primary btn-sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRegenerateToken(device.uuid);
@@ -273,7 +284,7 @@ function Devices() {
                         Show Token
                       </button>
                       <button 
-                        className="action-button delete"
+                        className="btn btn-danger btn-sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteDevice(device.uuid);
@@ -282,22 +293,26 @@ function Devices() {
                         Delete
                       </button>
                     </div>
+                    <div style={{fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'right'}}>
+                      <div>{device.organization?.name}</div>
+                      <div>Updated {new Date(device.updated_at).toLocaleDateString()}</div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </main>
       </div>
 
       {/* Create Device Modal */}
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Create New Device</h2>
+              <h2 className="modal-title">Create New Device</h2>
               <button 
-                className="close-button"
+                className="modal-close"
                 onClick={() => setShowCreateModal(false)}
               >
                 ✕
@@ -305,8 +320,9 @@ function Devices() {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label htmlFor="device-name">Device Name *</label>
+                <label className="form-label" htmlFor="device-name">Device Name *</label>
                 <input
+                  className="form-input"
                   id="device-name"
                   type="text"
                   value={newDevice.name}
@@ -315,8 +331,9 @@ function Devices() {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="device-description">Description</label>
+                <label className="form-label" htmlFor="device-description">Description</label>
                 <textarea
+                  className="form-textarea"
                   id="device-description"
                   value={newDevice.description}
                   onChange={e => setNewDevice({...newDevice, description: e.target.value})}
@@ -325,8 +342,9 @@ function Devices() {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="device-organization">Organization *</label>
+                <label className="form-label" htmlFor="device-organization">Organization *</label>
                 <select
+                  className="form-select"
                   id="device-organization"
                   value={newDevice.organization}
                   onChange={e => handleOrganizationChange(parseInt(e.target.value))}
@@ -337,8 +355,9 @@ function Devices() {
                 </select>
               </div>
               <div className="form-group">
-                <label htmlFor="device-status">Status</label>
+                <label className="form-label" htmlFor="device-status">Status</label>
                 <select
+                  className="form-select"
                   id="device-status"
                   value={newDevice.status}
                   onChange={e => setNewDevice({...newDevice, status: e.target.value})}
@@ -350,10 +369,10 @@ function Devices() {
               </div>
               {availableProjects.length > 0 && (
                 <div className="form-group">
-                  <label>Assign to Projects (Optional)</label>
-                  <div className="project-checkboxes">
+                  <label className="form-label">Assign to Projects (Optional)</label>
+                  <div style={{maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: '6px', padding: '1rem', background: 'var(--bg-tertiary)'}}>
                     {availableProjects.map(project => (
-                      <label key={project.uuid} className="checkbox-label">
+                      <label key={project.uuid} style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.25rem 0'}}>
                         <input
                           type="checkbox"
                           checked={selectedProjects.includes(project.uuid)}
@@ -374,7 +393,7 @@ function Devices() {
             </div>
             <div className="modal-footer">
               <button 
-                className="primary-button"
+                className="btn btn-primary"
                 onClick={handleCreateDevice}
                 disabled={!newDevice.name || !newDevice.organization}
               >

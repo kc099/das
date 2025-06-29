@@ -13,6 +13,7 @@ import MqttClustersPage from './pages/MqttClustersPage';
 import MqttDashboard from './pages/MqttDashboard';
 import Devices from './pages/Devices';
 import './App.css';
+import './styles/BaseLayout.css';
 
 function App() {
   return (

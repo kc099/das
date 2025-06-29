@@ -3,9 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { authAPI, mqttAPI } from '../services/api';
 import DashboardHeader from '../components/common/DashboardHeader';
 import DashboardSidebar from '../components/common/DashboardSidebar';
+import LoadingLayout from '../components/common/LoadingLayout';
 import cacheService from '../services/cache';
 import './Dashboard.css';
-import './MqttDashboard.css';
+import '../styles/MqttPage.css';
+import '../styles/BaseLayout.css';
+import '../styles/MqttPage.css';
+import useDashboardStore from '../store/dashboardStore';
+import { useStatActions } from '../hooks/useDashboardStats';
 
 function MqttClustersPage() {
   const navigate = useNavigate();
@@ -14,13 +19,17 @@ function MqttClustersPage() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCredentialsModal, setShowCredentialsModal] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { sidebarOpen, setSidebarOpen, toggleSidebar } = useDashboardStore();
   const [createForm, setCreateForm] = useState({ name: '', host: '', port: 1883, username: '', password: '' });
   const [credentialsForm, setCredentialsForm] = useState({ username: '', password: '' });
+  const { incrementStat, decrementStat, refresh: refreshStats } = useStatActions();
 
+  // Wrap loadData in useCallback so that its reference is stable across
+  // renders. This prevents useEffect below from triggering on every render
+  // and causing an infinite re-fetch / loading-spinner loop.
   const loadData = useCallback(async () => {
     try {
-      console.log('Loading MQTT clusters...');
+      setLoading(true);
       
       // Fetch user profile
       const userResponse = await authAPI.get('/profile/');
@@ -28,15 +37,11 @@ function MqttClustersPage() {
         setUser(userResponse.data.user);
       }
       
-      // Get ALL clusters (both hosted and external) from database
+      // Get clusters from database
       const clustersResponse = await mqttAPI.clusters.list();
-      console.log('Clusters response:', clustersResponse);
       
-      const clusters = [];
-      
-      // All clusters now come from database with UUIDs
       if (clustersResponse.data && Array.isArray(clustersResponse.data)) {
-        clusters.push(...clustersResponse.data.map(cluster => ({
+        const clusters = clustersResponse.data.map(cluster => ({
           id: cluster.uuid,
           uuid: cluster.uuid,
           name: cluster.name,
@@ -46,15 +51,15 @@ function MqttClustersPage() {
           password: cluster.password,
           cluster_type: cluster.cluster_type,
           created_at: cluster.created_at,
-        })));
+        }));
+        setClusters(clusters);
+      } else {
+        setClusters([]);
       }
-      
-      console.log('Final clusters:', clusters);
-      setClusters(clusters);
       
     } catch (err) {
       console.error('Error loading MQTT clusters:', err);
-      setClusters([]); // Set empty array on error
+      setClusters([]);
       if (err.response?.status === 401) {
         localStorage.clear();
         navigate('/login');
@@ -64,22 +69,16 @@ function MqttClustersPage() {
     }
   }, [navigate]);
 
+  // loadData is now memoised, so this effect will only run once on mount (or
+  // if navigate function changes, which is highly unlikely).
   useEffect(() => {
     const initializePage = async () => {
-      try {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          navigate('/login');
-          return;
-        }
-        await loadData();
-      } catch (error) {
-        console.error('Page initialization error:', error);
-        if (error.response?.status === 401) {
-          localStorage.clear();
-          navigate('/login');
-        }
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        navigate('/login');
+        return;
       }
+      await loadData();
     };
 
     initializePage();
@@ -105,6 +104,9 @@ function MqttClustersPage() {
       // Reload clusters directly
       loadData();
       
+      incrementStat('mqttClusters');
+      refreshStats();
+      
       // Reset form and close modal
       setCreateForm({ name: '', host: '', port: 1883, username: '', password: '' });
       setShowCreateModal(false);
@@ -127,6 +129,9 @@ function MqttClustersPage() {
       
       // Reload clusters to show the newly created hosted cluster
       loadData();
+      
+      incrementStat('mqttClusters');
+      refreshStats();
       
       // Reset form and close modal
       setCredentialsForm({ username: '', password: '' });
@@ -161,41 +166,17 @@ function MqttClustersPage() {
 
   // Show loading state
   if (loading) {
-    return (
-      <div className="dashboard-container">
-        <DashboardHeader 
-          user={user}
-          subscriptionType="free"
-          onLogout={handleLogout}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        />
-        <div className="dashboard-layout">
-          <DashboardSidebar 
-            isOpen={sidebarOpen} 
-            onClose={() => setSidebarOpen(false)} 
-          />
-          <main className="dashboard-main">
-            <div className="dashboard-content">
-              <div style={{textAlign: 'center', marginTop: '3rem'}}>
-                <div className="loading-spinner">
-                  <div className="spinner"></div>
-                  <p>Loading clusters...</p>
-                </div>
-              </div>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
+    return <LoadingLayout user={user} message="Loading clusters..." />;
   }
 
   if (!user) {
     return (
-      <div className="dashboard-container">
-        <div className="error-state">
-          <h2>Access Denied</h2>
-          <p>Please log in to access MQTT clusters.</p>
-          <button onClick={() => navigate('/login')}>Go to Login</button>
+      <div className="page-container">
+        <div className="empty-state">
+          <div className="empty-icon">🔒</div>
+          <h2 className="empty-title">Access Denied</h2>
+          <p className="empty-description">Please log in to access MQTT clusters.</p>
+          <button className="btn btn-primary" onClick={() => navigate('/login')}>Go to Login</button>
         </div>
       </div>
     );
@@ -204,47 +185,43 @@ function MqttClustersPage() {
   // If no clusters exist, show empty state
   if (clusters.length === 0) {
     return (
-      <div className="dashboard-container">
+      <div className="page-container">
         <DashboardHeader 
           user={user}
           subscriptionType="free"
           onLogout={handleLogout}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onToggleSidebar={toggleSidebar}
         />
-        <div className="dashboard-layout">
+        <div className="layout">
           <DashboardSidebar 
             isOpen={sidebarOpen} 
             onClose={() => setSidebarOpen(false)} 
           />
-          <main className="dashboard-main">
-            <div className="dashboard-content">
-              <div className="projects-header">
-                <div>
-                  <h1>MQTT Clusters</h1>
-                  <p>Manage your MQTT brokers and connections</p>
-                </div>
+          <main className="main-content">
+            <div className="page-header">
+              <div className="page-header-content">
+                <h1 className="page-title">MQTT Clusters</h1>
+                <p className="page-subtitle">Manage your MQTT brokers and connections</p>
               </div>
+            </div>
 
-              <div className="empty-projects">
-                <div className="empty-icon">🔗</div>
-                <h2>No MQTT Clusters Yet</h2>
-                <p>Set up your MQTT credentials to get a free hosted cluster, or add an external cluster</p>
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1.5rem', flexWrap: 'wrap' }}>
-                  <button 
-                    className="primary-button" 
-                    onClick={() => setShowCredentialsModal(true)}
-                    style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
-                  >
-                    🏠 Set MQTT Credentials
-                  </button>
-                  <button 
-                    className="primary-button" 
-                    onClick={() => setShowCreateModal(true)}
-                    style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}
-                  >
-                    🌐 Add External Cluster
-                  </button>
-                </div>
+            <div className="empty-state">
+              <div className="empty-icon">🔗</div>
+              <h2 className="empty-title">No MQTT Clusters Yet</h2>
+              <p className="empty-description">Set up your MQTT credentials to get a free hosted cluster, or add an external cluster</p>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1.5rem', flexWrap: 'wrap' }}>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={() => setShowCredentialsModal(true)}
+                >
+                  🏠 Set MQTT Credentials
+                </button>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  🌐 Add External Cluster
+                </button>
               </div>
             </div>
           </main>
@@ -314,12 +291,12 @@ function MqttClustersPage() {
                   <div className="modal-footer">
                     <button 
                       type="button" 
-                      className="cancel-btn" 
+                      className="btn btn-secondary"
                       onClick={() => setShowCreateModal(false)}
                     >
                       Cancel
                     </button>
-                    <button className="create-btn" type="submit">
+                    <button className="btn btn-primary" type="submit">
                       Add Cluster
                     </button>
                   </div>
@@ -367,12 +344,12 @@ function MqttClustersPage() {
                   <div className="modal-footer">
                     <button 
                       type="button" 
-                      className="cancel-btn" 
+                      className="btn btn-secondary" 
                       onClick={() => setShowCredentialsModal(false)}
                     >
                       Cancel
                     </button>
-                    <button className="create-btn" type="submit">
+                    <button className="btn btn-primary" type="submit">
                       Set Credentials
                     </button>
                   </div>
@@ -386,54 +363,56 @@ function MqttClustersPage() {
   }
 
   return (
-    <div className="dashboard-container">
+    <div className="page-container">
       <DashboardHeader 
         user={user}
         subscriptionType="free"
         onLogout={handleLogout}
-        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        onToggleSidebar={toggleSidebar}
       />
-      <div className="dashboard-layout">
+      <div className="layout">
         <DashboardSidebar 
           isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)} 
         />
-        <main className="dashboard-main">
-          <div className="dashboard-content">
-            <div className="projects-header">
-              <div>
-                <h1>MQTT Clusters</h1>
-                <p>Manage your MQTT brokers and connections</p>
-              </div>
+        <main className="main-content">
+          <div className="page-header">
+            <div className="page-header-content">
+              <h1 className="page-title">MQTT Clusters</h1>
+              <p className="page-subtitle">Manage your MQTT brokers and connections</p>
             </div>
+          </div>
 
-            {/* Cluster Grid */}
-            <div className="tab-content">
-              <div className="items-grid">
-                {clusters.map((cluster) => (
-                  <div key={cluster.id} className="item-card cluster-card" onClick={() => openCluster(cluster)}>
-                    <div className="item-header">
-                      <h3>{cluster.name}</h3>
-                      <span className={`item-badge ${cluster.cluster_type}`}>
-                        {cluster.cluster_type === 'hosted' ? '🏠 Hosted' : '🌐 External'}
-                      </span>
-                    </div>
-                    <div className="cluster-info">
-                      <p><strong>Host:</strong> {cluster.host}</p>
-                      <p><strong>Port:</strong> {cluster.port}</p>
+          {/* Cluster Grid */}
+          <div className="clusters-grid">
+              {clusters.map((cluster) => (
+                <div key={cluster.id} className="cluster-card" style={{cursor: 'pointer'}} onClick={() => openCluster(cluster)}>
+                  <div className="card-header">
+                    <h3 className="card-title">{cluster.name}</h3>
+                    <span className={`status-badge ${cluster.cluster_type === 'hosted' ? 'status-success' : 'status-info'}`}>
+                      {cluster.cluster_type === 'hosted' ? '🏠 Hosted' : '🌐 External'}
+                    </span>
+                  </div>
+                  <div className="card-content">
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem'}}>
+                      <p style={{margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)'}}><strong>Host:</strong> {cluster.host}</p>
+                      <p style={{margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)'}}><strong>Port:</strong> {cluster.port}</p>
                       {cluster.cluster_type === 'hosted' && (
-                        <p><strong>Plan:</strong> Serverless</p>
+                        <p style={{margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)'}}><strong>Plan:</strong> Serverless</p>
                       )}
                       {cluster.total_topics !== undefined && (
-                        <p><strong>Topics:</strong> {cluster.total_topics} | <strong>Messages:</strong> {cluster.total_messages.toLocaleString()}</p>
+                        <p style={{margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)'}}><strong>Topics:</strong> {cluster.total_topics} | <strong>Messages:</strong> {cluster.total_messages.toLocaleString()}</p>
                       )}
                     </div>
-                    <div className="item-actions">
-                      <button className="view-btn" onClick={(e) => { e.stopPropagation(); openCluster(cluster); }}>
+                  </div>
+                  <div className="card-footer">
+                    <div style={{display: 'flex', gap: '0.5rem', width: '100%'}}>
+                      <button className="btn btn-primary" style={{flex: 1}} onClick={(e) => { e.stopPropagation(); openCluster(cluster); }}>
                         Open
                       </button>
                       <button 
-                        className="delete-btn" 
+                        className="btn btn-danger"
+                        style={{flex: 1}}
                         onClick={async (e) => { 
                           e.stopPropagation(); 
                           const confirmMsg = cluster.cluster_type === 'hosted' 
@@ -448,6 +427,9 @@ function MqttClustersPage() {
                               // Reload clusters directly
                               loadData();
                               
+                              decrementStat('mqttClusters');
+                              refreshStats();
+                              
                               alert('Cluster deleted successfully');
                             } catch (err) {
                               console.error('Error deleting cluster:', err);
@@ -460,9 +442,9 @@ function MqttClustersPage() {
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              ))}
+          </div>
 
             {/* Floating Add Button */}
             <button className="floating-add-btn" onClick={() => setShowCreateModal(true)}>
@@ -599,7 +581,6 @@ function MqttClustersPage() {
                 </div>
               </div>
             )}
-          </div>
         </main>
       </div>
     </div>

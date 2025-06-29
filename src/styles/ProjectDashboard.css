@@ -1,0 +1,190 @@
+/* ==========================================================================
+   PROJECT DASHBOARD - Flexible Section Cards
+   ========================================================================== */
+
+/* Dashboard Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+/* Section Cards - Independent Heights */
+.section-card {
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  /* Let each card determine its own height based on content */
+  min-height: 400px;
+  max-height: 600px; /* Reasonable max to prevent extremely tall cards */
+}
+
+.section-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Section Header */
+.section-header {
+  padding: 1.5rem 1.5rem 0;
+  border-bottom: none;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.section-description {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0 0 1rem 0;
+}
+
+/* Section Content */
+.section-content {
+  flex: 1;
+  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.section-action {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+/* Scrollable Items Area */
+.items-container {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0; /* Essential for flexbox scrolling */
+  padding-right: 8px;
+}
+
+/* Individual Items */
+.item {
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-gray);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.item:hover {
+  background: #f3f4f6;
+  border-color: var(--primary-color);
+}
+
+.item:last-child {
+  margin-bottom: 0;
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.item-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.item-action {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.item-action:hover {
+  background: var(--border-light);
+  color: var(--text-primary);
+}
+
+.item-action.danger:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.item-description {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.5rem 0;
+  line-height: 1.4;
+}
+
+.item-meta {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Stats Bar */
+.stats-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--bg-white);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  align-items: center;
+}
+
+.stats-bar .stat-item {
+  text-align: center;
+}
+
+.stats-bar .stat-number {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.stats-bar .stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .section-card {
+    min-height: 300px;
+    max-height: 500px;
+  }
+  
+  .section-header,
+  .section-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}

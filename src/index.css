@@ -1,4 +1,8 @@
 :root {
+  /* Layout Constants */
+  --sidebar-width: 280px;
+  --header-height: 48px;
+  
   /* Primary Theme Colors */
   --primary-color: #22c55e;
   --primary-hover: #16a34a;
@@ -16,6 +20,21 @@
   --text-primary: #1a1a1a;
   --text-secondary: #666;
   --text-light: #999;
+  
+  /* Background Colors */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f3f4f6;
+  
+  /* Border Colors */
+  --border-light: #e5e7eb;
+  --border-medium: #d1d5db;
+  --border-dark: #9ca3af;
+  
+  /* Shadow */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 body {

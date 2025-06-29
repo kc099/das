@@ -6,7 +6,10 @@ import DashboardHeader from '../components/common/DashboardHeader';
 import DashboardSidebar from '../components/common/DashboardSidebar';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { useStatActions } from '../hooks/useDashboardStats';
+import useDashboardStore from '../store/dashboardStore';
 import './Dashboard.css';
+import '../styles/BaseLayout.css';
+import '../styles/ProjectsPage.css';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -15,14 +18,14 @@ function Dashboard() {
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { sidebarOpen, setSidebarOpen, toggleSidebar } = useDashboardStore();
   const [newProject, setNewProject] = useState({
     name: '',
     description: '',
     organization_id: '',
     tags: []
   });
-  const { updateStat, incrementStat } = useStatActions();
+  const { updateStat, incrementStat, refresh: refreshStats } = useStatActions();
 
   useEffect(() => {
     const initializeDashboard = async () => {
@@ -46,18 +49,12 @@ function Dashboard() {
           if (orgResponse.data.organizations.length > 0) {
             setNewProject(prev => ({ ...prev, organization_id: orgResponse.data.organizations[0].id }));
           }
-          
-          // Update stats in store
-          updateStat('organizations', orgResponse.data.organizations.length);
         }
 
         // Fetch user's projects
         const projectsResponse = await projectAPI.getProjects();
         if (projectsResponse.data.status === 'success') {
           setProjects(projectsResponse.data.projects);
-          
-          // Update stats in store
-          updateStat('projects', projectsResponse.data.projects.length);
         }
 
       } catch (error) {
@@ -72,7 +69,7 @@ function Dashboard() {
     };
 
     initializeDashboard();
-  }, [navigate, updateStat]);
+  }, [navigate]);
 
   const handleLogout = async () => {
     try {
@@ -94,8 +91,6 @@ function Dashboard() {
       const response = await projectAPI.createProject(newProject);
       if (response.data.status === 'success') {
         setProjects([...projects, response.data.project]);
-        // Increment projects count in store
-        incrementStat('projects');
         setShowCreateModal(false);
         setNewProject({
           name: '',
@@ -103,7 +98,8 @@ function Dashboard() {
           organization_id: organizations[0]?.id || '',
           tags: []
         });
-        // Navigate to the new project
+        incrementStat('projects');
+        refreshStats();
         navigate(`/project/${response.data.project.uuid}`);
       }
     } catch (error) {
@@ -114,34 +110,51 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <div className="dashboard-container">
-        <LoadingSpinner message="Loading your projects..." />
+      <div className="page-container">
+        <DashboardHeader 
+          user={user} 
+          subscriptionType="free"
+          onLogout={handleLogout}
+          onToggleSidebar={toggleSidebar}
+        />
+        <div className="layout">
+          <DashboardSidebar 
+            isOpen={sidebarOpen} 
+            onClose={() => setSidebarOpen(false)} 
+          />
+          <main className="main-content">
+            <div className="content-wrapper">
+              <LoadingSpinner message="Loading your projects..." />
+            </div>
+          </main>
+        </div>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="dashboard-container">
-        <div className="error-state">
-          <h2>Access Denied</h2>
-          <p>Please log in to access your dashboard.</p>
-          <button onClick={() => navigate('/login')}>Go to Login</button>
+      <div className="page-container">
+        <div className="empty-state">
+          <div className="empty-icon">🔒</div>
+          <h2 className="empty-title">Access Denied</h2>
+          <p className="empty-description">Please log in to access your dashboard.</p>
+          <button className="btn btn-primary" onClick={() => navigate('/login')}>Go to Login</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="dashboard-container">
+    <div className="page-container">
       <DashboardHeader 
         user={user} 
         subscriptionType="free" // This should come from user profile
         onLogout={handleLogout}
-        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        onToggleSidebar={toggleSidebar}
       />
       
-      <div className="dashboard-layout">
+      <div className="layout">
         {/* Shared Sidebar Component */}
         <DashboardSidebar 
           isOpen={sidebarOpen} 
@@ -149,28 +162,30 @@ function Dashboard() {
         />
 
         {/* Main Content */}
-        <main className="dashboard-main">
-          <div className="dashboard-content">
-            <div className="projects-header">
-              <div>
-                <h1>Your Projects</h1>
-                <p>Manage your IoT applications and data flows</p>
+        <main className="main-content">
+          <div className="content-wrapper">
+            <div className="page-header">
+              <div className="page-header-content">
+                <h1 className="page-title">Your Projects</h1>
+                <p className="page-subtitle">Manage your IoT applications and data flows</p>
               </div>
-              <button 
-                className="create-project-button"
-                onClick={() => setShowCreateModal(true)}
-              >
-                + New Project
-              </button>
+              <div className="page-actions">
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  + New Project
+                </button>
+              </div>
             </div>
 
             {projects.length === 0 ? (
-              <div className="empty-projects">
+              <div className="empty-state">
                 <div className="empty-icon">📊</div>
-                <h2>No Projects Yet</h2>
-                <p>Create your first IoT project to start building data flows and dashboards</p>
+                <h2 className="empty-title">No Projects Yet</h2>
+                <p className="empty-description">Create your first IoT project to start building data flows and dashboards</p>
                 <button 
-                  className="primary-button"
+                  className="btn btn-primary"
                   onClick={() => setShowCreateModal(true)}
                 >
                   Create Your First Project
@@ -185,20 +200,27 @@ function Dashboard() {
                     onClick={() => navigate(`/project/${project.uuid}`)}
                   >
                     <div className="project-card-header">
-                      <h3>{project.name}</h3>
-                      <span className={`status-badge ${project.status}`}>
+                      <h3 className="project-title">{project.name}</h3>
+                      <span className={`project-status ${project.status === 'active' ? 'active' : 'inactive'}`}>
                         {project.status}
                       </span>
                     </div>
-                    <p className="project-description">{project.description}</p>
+                    <p className="project-description">{project.description || 'No description provided'}</p>
                     <div className="project-stats">
-                      <span>{project.flow_count} flows</span>
-                      <span>{project.dashboard_count} dashboards</span>
+                      <div className="stat-item">
+                        <span className="stat-number">{project.flow_count || 0}</span>
+                        <span className="stat-label">Flows</span>
+                      </div>
+                      <div className="stat-divider"></div>
+                      <div className="stat-item">
+                        <span className="stat-number">{project.dashboard_count || 0}</span>
+                        <span className="stat-label">Dashboards</span>
+                      </div>
                     </div>
-                    <div className="project-meta">
-                      <span className="organization">{project.organization.name}</span>
-                      <span className="updated">
-                        Updated {new Date(project.updated_at).toLocaleDateString()}
+                    <div className="project-footer">
+                      <span className="organization-name">{project.organization.name}</span>
+                      <span className="last-updated">
+                        {new Date(project.updated_at).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
@@ -212,11 +234,11 @@ function Dashboard() {
       {/* Create Project Modal */}
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Create New Project</h2>
+              <h2 className="modal-title">Create New Project</h2>
               <button 
-                className="close-button"
+                className="modal-close"
                 onClick={() => setShowCreateModal(false)}
               >
                 ✕
@@ -224,8 +246,9 @@ function Dashboard() {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label htmlFor="project-name">Project Name *</label>
+                <label className="form-label" htmlFor="project-name">Project Name *</label>
                 <input
+                  className="form-input"
                   id="project-name"
                   type="text"
                   placeholder="Enter project name"
@@ -235,8 +258,9 @@ function Dashboard() {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="project-org">Organization *</label>
+                <label className="form-label" htmlFor="project-org">Organization *</label>
                 <select
+                  className="form-select"
                   id="project-org"
                   value={newProject.organization_id}
                   onChange={e => setNewProject({...newProject, organization_id: e.target.value})}
@@ -248,8 +272,9 @@ function Dashboard() {
                 </select>
               </div>
               <div className="form-group">
-                <label htmlFor="project-desc">Description</label>
+                <label className="form-label" htmlFor="project-desc">Description</label>
                 <textarea
+                  className="form-textarea"
                   id="project-desc"
                   placeholder="Describe your project"
                   value={newProject.description}
@@ -260,13 +285,13 @@ function Dashboard() {
             </div>
             <div className="modal-footer">
               <button 
-                className="secondary-button"
+                className="btn btn-secondary"
                 onClick={() => setShowCreateModal(false)}
               >
                 Cancel
               </button>
               <button 
-                className="primary-button"
+                className="btn btn-primary"
                 onClick={handleCreateProject}
                 disabled={!newProject.name || !newProject.organization_id}
               >

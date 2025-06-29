@@ -149,44 +149,6 @@ const DashboardHeader = ({ user, subscriptionType, onLogout, onToggleSidebar }) 
 
               <div className="dropdown-divider"></div>
 
-              <div className="dropdown-section">
-                <div className="dropdown-header">Quick Actions</div>
-                <div className="quick-actions">
-                  <button 
-                    className="action-item"
-                    onClick={() => handleDropdownItemClick(() => navigate('/organizations'))}
-                  >
-                    <span className="action-icon">🏢</span>
-                    <div className="action-text">
-                      <span className="action-title">Organizations</span>
-                      <span className="action-subtitle">Manage organizations</span>
-                    </div>
-                  </button>
-                  <button 
-                    className="action-item"
-                    onClick={() => handleDropdownItemClick(() => navigate('/devices'))}
-                  >
-                    <span className="action-icon">🏠</span>
-                    <div className="action-text">
-                      <span className="action-title">Devices</span>
-                      <span className="action-subtitle">Manage IoT devices</span>
-                    </div>
-                  </button>
-                  <button 
-                    className="action-item"
-                    onClick={() => handleDropdownItemClick(() => navigate('/mqtt-clusters'))}
-                  >
-                    <span className="action-icon">🔒</span>
-                    <div className="action-text">
-                      <span className="action-title">MQTT Clusters</span>
-                      <span className="action-subtitle">Manage brokers</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              <div className="dropdown-divider"></div>
-
               <button className="logout-button" onClick={handleLogoutClick}>
                 <span className="logout-icon">🚪</span>
                 Logout

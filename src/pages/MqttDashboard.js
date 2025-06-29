@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { mqttAPI } from '../services/api';
+import { authAPI, mqttAPI } from '../services/api';
 import cacheService from '../services/cache';
+import DashboardHeader from '../components/common/DashboardHeader';
+import DashboardSidebar from '../components/common/DashboardSidebar';
+import useDashboardStore from '../store/dashboardStore';
 import './Dashboard.css'; // reuse core styles
-import './MqttDashboard.css';
+import '../styles/BaseLayout.css';
+import '../styles/MqttPage.css';
 
 
 function MqttDashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [user, setUser] = useState(null);
   const [currentCluster, setCurrentCluster] = useState(null);
+  const { sidebarOpen, setSidebarOpen, toggleSidebar } = useDashboardStore();
   const [info, setInfo] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('Not Connected');
   const [testRunning, setTestRunning] = useState(false);
@@ -28,6 +34,19 @@ function MqttDashboard() {
   useEffect(() => {
     const loadAll = async () => {
       try {
+        // Check authentication
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
+
+        // Fetch user profile
+        const userResponse = await authAPI.get('/profile/');
+        if (userResponse.data.status === 'success') {
+          setUser(userResponse.data.user);
+        }
+
         // Get cluster UUID from URL
         const clusterUuid = searchParams.get('cluster');
         
@@ -203,8 +222,48 @@ function MqttDashboard() {
     document.getElementById(tabName).classList.add('active');
   };
 
+  const handleLogout = async () => {
+    try {
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (refreshToken) {
+        await authAPI.logout(refreshToken);
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.clear();
+      cacheService.clearAll();
+      navigate('/');
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="page-container">
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="mqtt-main" style={{padding:'1.5rem'}}>
+    <div className="page-container">
+      <DashboardHeader 
+        user={user}
+        subscriptionType="free"
+        onLogout={handleLogout}
+        onToggleSidebar={toggleSidebar}
+      />
+      
+      <div className="layout">
+        <DashboardSidebar 
+          isOpen={sidebarOpen} 
+          onClose={() => setSidebarOpen(false)} 
+        />
+        <main className="main-content">
+          <div className="mqtt-main" style={{padding:'1.5rem'}}>
       <header className="cluster-header">
         <h1>{currentCluster ? currentCluster.name : 'Hosted Broker'}</h1>
         <button className="back-btn" onClick={()=>navigate('/mqtt-clusters')}>← Back</button>
@@ -492,6 +551,9 @@ function MqttDashboard() {
           </div>
         </div>
       )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

@@ -3,9 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { authAPI, organizationAPI } from '../services/api';
 import DashboardHeader from '../components/common/DashboardHeader';
 import DashboardSidebar from '../components/common/DashboardSidebar';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import LoadingLayout from '../components/common/LoadingLayout';
+
 import cacheService from '../services/cache';
-import './Organizations.css';
+import '../styles/OrganizationsPage.css';
+import '../styles/BaseLayout.css';
+import '../styles/OrganizationsPage.css';
+import useDashboardStore from '../store/dashboardStore';
+import { useStatActions } from '../hooks/useDashboardStats';
 
 function Organizations() {
   const navigate = useNavigate();
@@ -18,7 +23,7 @@ function Organizations() {
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [orgMembers, setOrgMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { sidebarOpen, setSidebarOpen, toggleSidebar } = useDashboardStore();
   const [formData, setFormData] = useState({
     name: '',
     description: ''
@@ -27,6 +32,7 @@ function Organizations() {
     email: '',
     role: 'user'
   });
+  const { incrementStat, decrementStat, refresh: refreshStats } = useStatActions();
 
   useEffect(() => {
     const initializeOrganizations = async () => {
@@ -84,6 +90,8 @@ function Organizations() {
         setOrganizations([...organizations, response.data.organization]);
         setShowCreateModal(false);
         setFormData({ name: '', description: '' });
+        incrementStat('organizations');
+        refreshStats();
       }
     } catch (error) {
       console.error('Error creating organization:', error);
@@ -119,6 +127,8 @@ function Organizations() {
     try {
       await organizationAPI.deleteOrganization(orgId);
       setOrganizations(organizations.filter(org => org.id !== orgId));
+      decrementStat('organizations');
+      refreshStats();
     } catch (error) {
       console.error('Error deleting organization:', error);
       alert('Failed to delete organization. Please try again.');
@@ -203,108 +213,91 @@ function Organizations() {
   };
 
   if (loading) {
-    return (
-      <div className="dashboard-container">
-        <DashboardHeader 
-          user={user}
-          subscriptionType="free"
-          onLogout={handleLogout}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        />
-        <div className="dashboard-layout">
-          <DashboardSidebar 
-            isOpen={sidebarOpen} 
-            onClose={() => setSidebarOpen(false)} 
-          />
-          <main className="dashboard-main">
-            <div className="dashboard-content">
-              <LoadingSpinner message="Loading organizations..." />
-            </div>
-          </main>
-        </div>
-      </div>
-    );
+    return <LoadingLayout user={user} message="Loading organizations..." />;
   }
 
   if (!user) {
     return (
-      <div className="dashboard-container">
-        <div className="error-state">
-          <h2>Access Denied</h2>
-          <p>Please log in to access organizations.</p>
-          <button onClick={() => navigate('/login')}>Go to Login</button>
+      <div className="page-container">
+        <div className="empty-state">
+          <div className="empty-icon">🔒</div>
+          <h2 className="empty-title">Access Denied</h2>
+          <p className="empty-description">Please log in to access organizations.</p>
+          <button className="btn btn-primary" onClick={() => navigate('/login')}>Go to Login</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="dashboard-container">
+    <div className="page-container">
       <DashboardHeader 
         user={user}
         subscriptionType="free"
         onLogout={handleLogout}
-        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        onToggleSidebar={toggleSidebar}
       />
-      <div className="dashboard-layout">
+      <div className="layout">
         <DashboardSidebar 
           isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)} 
         />
-        <main className="dashboard-main">
-          <div className="dashboard-content">
-            <div className="projects-header">
-              <div>
-                <h1>Organizations</h1>
-              </div>
+        <main className="main-content">
+          <div className="page-header">
+            <div className="page-header-content">
+              <h1 className="page-title">Organizations</h1>
+              <p className="page-subtitle">Manage your organizations and team members</p>
+            </div>
+            <div className="page-actions">
               <button 
-                className="primary-button" 
+                className="btn btn-primary" 
                 onClick={() => setShowCreateModal(true)}
               >
                 + Create Organization
               </button>
             </div>
+          </div>
 
-            {organizations.length === 0 ? (
-              <div className="empty-projects">
-                <div className="empty-icon">🏢</div>
-                <h2>No Organizations Yet</h2>
-                <p>Create your first organization to start managing teams and projects</p>
-                <button 
-                  className="primary-button" 
-                  onClick={() => setShowCreateModal(true)}
-                >
-                  Create Organization
-                </button>
-              </div>
-            ) : (
-              <div className="organizations-grid">
-                {organizations.map((org) => (
-                  <div key={org.id} className="organization-card">
-                    <div className="organization-header">
-                      <div className="organization-info">
-                        <h3>{org.name}</h3>
-                        <p>{org.description || 'No description provided'}</p>
-                      </div>
-                      <div className="organization-actions">
-                        <button 
-                          className="action-btn edit-btn"
-                          onClick={() => openEditModal(org)}
-                          title="Edit Organization"
-                        >
-                          ✏️
-                        </button>
-                        <button 
-                          className="action-btn delete-btn"
-                          onClick={() => handleDeleteOrg(org.id, org.name)}
-                          title="Delete Organization"
-                        >
-                          🗑️
-                        </button>
-                      </div>
+          {organizations.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">🏢</div>
+              <h2 className="empty-title">No Organizations Yet</h2>
+              <p className="empty-description">Create your first organization to start managing teams and projects</p>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => setShowCreateModal(true)}
+              >
+                Create Organization
+              </button>
+            </div>
+          ) : (
+            <div className="organizations-grid">
+              {organizations.map((org) => (
+                <div key={org.id} className="organization-card">
+                  <div className="card-header">
+                    <h3 className="card-title">{org.name}</h3>
+                    <div className="card-actions">
+                      <button 
+                        className="action-btn"
+                        onClick={() => openEditModal(org)}
+                        title="Edit Organization"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        className="action-btn danger"
+                        onClick={() => handleDeleteOrg(org.id, org.name)}
+                        title="Delete Organization"
+                      >
+                        🗑️
+                      </button>
                     </div>
+                  </div>
+                  
+                  <div className="card-content">
+                    <p className="card-description">{org.description || 'No description provided'}</p>
                     
-                    <div className="organization-stats">
+                    <div className="card-stats">
                       <div className="stat">
                         <span className="stat-value">{org.user_count || 0}</span>
                         <span className="stat-label">Members</span>
@@ -314,34 +307,34 @@ function Organizations() {
                         <span className="stat-label">Projects</span>
                       </div>
                     </div>
-                    
-                    <div className="organization-footer">
-                      <button 
-                        className="members-btn"
-                        onClick={() => openMembersModal(org)}
-                      >
-                        👥 Manage Members
-                      </button>
-                      <span className="organization-date">
-                        Created {new Date(org.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  
+                  <div className="card-footer">
+                    <button 
+                      className="btn btn-primary btn-sm"
+                      onClick={() => openMembersModal(org)}
+                    >
+                      👥 Manage Members
+                    </button>
+                    <span className="card-meta">
+                      Created {new Date(org.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </main>
       </div>
 
       {/* Create Organization Modal */}
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Create New Organization</h2>
+              <h2 className="modal-title">Create New Organization</h2>
               <button 
-                className="close-button"
+                className="modal-close"
                 onClick={() => setShowCreateModal(false)}
               >
                 ✕
@@ -349,8 +342,9 @@ function Organizations() {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label htmlFor="org-name">Organization Name *</label>
+                <label className="form-label" htmlFor="org-name">Organization Name *</label>
                 <input
+                  className="form-input"
                   id="org-name"
                   type="text"
                   value={formData.name}
@@ -359,8 +353,9 @@ function Organizations() {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="org-description">Description</label>
+                <label className="form-label" htmlFor="org-description">Description</label>
                 <textarea
+                  className="form-textarea"
                   id="org-description"
                   value={formData.description}
                   onChange={e => setFormData({...formData, description: e.target.value})}
@@ -371,7 +366,7 @@ function Organizations() {
             </div>
             <div className="modal-footer">
               <button 
-                className="primary-button"
+                className="btn btn-primary"
                 onClick={handleCreateOrg}
                 disabled={!formData.name}
               >
@@ -385,11 +380,11 @@ function Organizations() {
       {/* Edit Organization Modal */}
       {showEditModal && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Edit Organization</h2>
+              <h2 className="modal-title">Edit Organization</h2>
               <button 
-                className="close-button"
+                className="modal-close"
                 onClick={() => setShowEditModal(false)}
               >
                 ✕
@@ -397,8 +392,9 @@ function Organizations() {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label htmlFor="edit-org-name">Organization Name *</label>
+                <label className="form-label" htmlFor="edit-org-name">Organization Name *</label>
                 <input
+                  className="form-input"
                   id="edit-org-name"
                   type="text"
                   value={formData.name}
@@ -407,8 +403,9 @@ function Organizations() {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="edit-org-description">Description</label>
+                <label className="form-label" htmlFor="edit-org-description">Description</label>
                 <textarea
+                  className="form-textarea"
                   id="edit-org-description"
                   value={formData.description}
                   onChange={e => setFormData({...formData, description: e.target.value})}
@@ -419,7 +416,7 @@ function Organizations() {
             </div>
             <div className="modal-footer">
               <button 
-                className="primary-button"
+                className="btn btn-primary"
                 onClick={handleEditOrg}
                 disabled={!formData.name}
               >
@@ -448,12 +445,13 @@ function Organizations() {
               <div className="add-member-section">
                 <h3>Add New Member</h3>
                 <div className="form-row">
-                  <div className="form-group">
+                  <div className="form-group" style={{flex: 1}}>
                     <input
                       type="email"
                       placeholder="Enter email address"
                       value={memberFormData.email}
                       onChange={e => setMemberFormData({...memberFormData, email: e.target.value})}
+                      style={{width: '100%'}}
                     />
                   </div>
                   <div className="form-group">
@@ -466,7 +464,7 @@ function Organizations() {
                     </select>
                   </div>
                   <button 
-                    className="primary-button"
+                    className="btn btn-primary"
                     onClick={handleAddMember}
                   >
                     Add Member

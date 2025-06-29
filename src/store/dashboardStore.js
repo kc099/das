@@ -13,10 +13,13 @@ const useDashboardStore = create((set, get) => ({
   loading: false,
   error: null,
   lastUpdated: null,
+  sidebarOpen: true,
 
   // Actions
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
+  setSidebarOpen: (open) => set({ sidebarOpen: open }),
+  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   
   // Load all stats - keeping existing logic intact
   loadStats: async () => {

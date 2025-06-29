@@ -1,0 +1,194 @@
+/* Organizations Page Styles */
+.organizations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.organization-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.organization-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary-color);
+}
+
+.organization-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.organization-card .card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.organization-card .card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.organization-card .action-btn {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: var(--text-secondary);
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.organization-card .action-btn:hover {
+  background: #e5e7eb;
+  color: var(--text-primary);
+}
+
+.organization-card .action-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.organization-card .card-content {
+  flex-grow: 1;
+}
+
+.organization-card .card-description {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
+  min-height: 2.8rem;
+}
+
+.organization-card .card-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.organization-card .stat {
+  text-align: center;
+}
+
+.organization-card .stat-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.organization-card .stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.organization-card .card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.organization-card .card-meta {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+/* ------------------------------------------------------------------
+   Member Modal Styling Adjustments
+   ------------------------------------------------------------------ */
+.members-modal .form-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.members-modal .form-group {
+  flex: 1 1 0;
+}
+
+.members-modal .members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.members-modal .member-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.members-modal .member-item:last-child {
+  border-bottom: none;
+}
+
+.member-info {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.member-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.member-email {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.member-role {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.remove-member-button {
+  background: none;
+  border: none;
+  color: var(--danger-color, #dc2626);
+  cursor: pointer;
+}
+
+/* Remove old blue .primary-button if still existing */
+.primary-button,
+.primary-button:hover {
+  background: var(--primary-color) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Force green palette for any .btn-primary variants appearing in this page */
+.btn-primary,
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+  background: var(--primary-color) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
