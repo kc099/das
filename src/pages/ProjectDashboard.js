@@ -5,7 +5,6 @@ import DashboardHeader from '../components/common/DashboardHeader';
 import DashboardSidebar from '../components/common/DashboardSidebar';
 // import FlowEditor from './FlowEditor';
 // import DashboardCreator from './DashboardCreator';
-import './ProjectDashboard.css';
 import '../styles/BaseLayout.css';
 import '../styles/ProjectDashboard.css';
 import useDashboardStore from '../store/dashboardStore';

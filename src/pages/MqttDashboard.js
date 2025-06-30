@@ -5,7 +5,7 @@ import cacheService from '../services/cache';
 import DashboardHeader from '../components/common/DashboardHeader';
 import DashboardSidebar from '../components/common/DashboardSidebar';
 import useDashboardStore from '../store/dashboardStore';
-import './Dashboard.css'; // reuse core styles
+import '../styles/Dashboard.css'; // reuse core styles
 import '../styles/BaseLayout.css';
 import '../styles/MqttPage.css';
 
@@ -116,7 +116,7 @@ function MqttDashboard() {
       }
     };
     loadAll();
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
 
 

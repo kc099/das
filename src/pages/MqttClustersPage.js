@@ -5,7 +5,7 @@ import DashboardHeader from '../components/common/DashboardHeader';
 import DashboardSidebar from '../components/common/DashboardSidebar';
 import LoadingLayout from '../components/common/LoadingLayout';
 import cacheService from '../services/cache';
-import './Dashboard.css';
+import '../styles/Dashboard.css';
 import '../styles/MqttPage.css';
 import '../styles/BaseLayout.css';
 import '../styles/MqttPage.css';

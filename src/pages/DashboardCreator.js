@@ -4,7 +4,7 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { projectAPI, dashboardAPI } from '../services/api';
 import WidgetFactory from '../components/widgets/WidgetFactory';
-import './DashboardCreator.css';
+import '../styles/DashboardCreator.css';
 import '../components/widgets/Widgets.css';
 import GridLayout from 'react-grid-layout';
 import { WidthProvider } from 'react-grid-layout';

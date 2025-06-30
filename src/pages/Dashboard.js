@@ -7,7 +7,7 @@ import DashboardSidebar from '../components/common/DashboardSidebar';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { useStatActions } from '../hooks/useDashboardStats';
 import useDashboardStore from '../store/dashboardStore';
-import './Dashboard.css';
+import '../styles/Dashboard.css';
 import '../styles/BaseLayout.css';
 import '../styles/ProjectsPage.css';
 
@@ -25,7 +25,7 @@ function Dashboard() {
     organization_id: '',
     tags: []
   });
-  const { updateStat, incrementStat, refresh: refreshStats } = useStatActions();
+  const { incrementStat, refresh: refreshStats } = useStatActions();
 
   useEffect(() => {
     const initializeDashboard = async () => {
