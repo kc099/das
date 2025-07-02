@@ -1,8 +1,9 @@
 /* MQTT Clusters Page Styles */
 .clusters-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 380px));
+  gap: 2rem;
+  justify-content: flex-start;
 }
 
 .cluster-card {
@@ -14,6 +15,8 @@
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 380px;
 }
 
 .cluster-card:hover {

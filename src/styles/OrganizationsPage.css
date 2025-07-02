@@ -1,8 +1,10 @@
 /* Organizations Page Styles */
 .organizations-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+  /* Grid columns: each track between 300-380px, so cards don't stretch */
+  grid-template-columns: repeat(auto-fill, minmax(300px, 380px));
+  gap: 2rem; /* match Projects page spacing */
+  justify-content: flex-start;
 }
 
 .organization-card {
@@ -14,6 +16,8 @@
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 380px;
 }
 
 .organization-card:hover {
