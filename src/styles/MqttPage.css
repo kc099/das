@@ -290,3 +290,26 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== Custom fixes for MQTT Dashboard alignment ===== */
+
+/* Ensure label and value sit on the same row in the Topic Statistics card */
+.topic-stats .stat-item {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.topic-stats .stat-value {
+  margin-left: 0;
+}
+
+/* Allow the "Status" stat card to contain the Test Connection button neatly */
+.cluster-cards .stat-card .stat-content {
+  flex: 1;
+}
+
+.cluster-cards .stat-card .create-btn {
+  margin-left: auto;
+}

@@ -29,7 +29,7 @@ function MqttDashboard() {
     traffic: { today: '0 KB', week: '0 KB', lifetime: '0 KB' }
   });
   const [showCredentialsModal, setShowCredentialsModal] = useState(false);
-  const [credentialsForm, setCredentialsForm] = useState({ password: '', confirmPassword: '' });
+  const [credentialsForm, setCredentialsForm] = useState({ username: '', password: '', confirmPassword: '' });
 
   useEffect(() => {
     const loadAll = async () => {
@@ -110,6 +110,14 @@ function MqttDashboard() {
           });
         } catch (statsErr) {
           console.log('Stats not available:', statsErr);
+        }
+
+        // Fetch user MQTT info
+        try {
+          const infoRes = await mqttAPI.getInfo();
+          setInfo(infoRes.data);
+        } catch (infoErr) {
+          console.log('MQTT info load error:', infoErr);
         }
       } catch(err){
         console.error('Error loading dashboard:', err);
@@ -279,16 +287,18 @@ function MqttDashboard() {
         </div>
         <div className="stat-card">
           <div className="stat-icon">📶</div>
-          <div className="stat-content">
+          <div className="stat-content" style={{flex: 1}}>
             <h3>{connectionStatus}</h3>
             <p>Status</p>
           </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">🛠</div>
-          <div className="stat-content">
-            <button className="create-btn" disabled={testRunning} onClick={testConnection}>Test Connection</button>
-          </div>
+          <button
+            className="create-btn"
+            disabled={testRunning}
+            onClick={testConnection}
+            style={{marginLeft: 'auto'}}
+          >
+            Test Connection
+          </button>
         </div>
       </div>
 
@@ -484,37 +494,62 @@ function MqttDashboard() {
               <h3>{info && info.hasPassword ? 'Update' : 'Create'} MQTT Credentials</h3>
               <button className="close-btn" onClick={() => {
                 setShowCredentialsModal(false);
-                setCredentialsForm({ password: '', confirmPassword: '' });
+                setCredentialsForm({ username: '', password: '', confirmPassword: '' });
               }}>×</button>
             </div>
             <div className="modal-body">
               <form onSubmit={async (e) => {
                 e.preventDefault();
-                if (credentialsForm.password !== credentialsForm.confirmPassword) {
+                const { username, password, confirmPassword } = credentialsForm;
+
+                if (password !== confirmPassword) {
                   alert('Passwords do not match');
                   return;
                 }
-                if (credentialsForm.password.length < 6) {
-                  alert('Password must be at least 6 characters');
+
+                if (password.length < 8) {
+                  alert('Password must be at least 8 characters');
                   return;
                 }
-                
+
+                // Determine username to send
+                const finalUsername = info && info.username ? info.username : username.trim();
+
+                if (!finalUsername || finalUsername.length < 3) {
+                  alert('Username must be at least 3 characters');
+                  return;
+                }
+
                 try {
-                  await mqttAPI.setPassword({ password: credentialsForm.password });
+                  await mqttAPI.setPassword({ username: finalUsername, password });
                   
-                  // Invalidate cache and refresh info
+                  // Refresh info and close modal
                   cacheService.refreshAfterAction('mqtt_credentials_updated');
                   const res = await mqttAPI.getInfo();
                   setInfo(res.data);
                   
                   setShowCredentialsModal(false);
-                  setCredentialsForm({ password: '', confirmPassword: '' });
+                  setCredentialsForm({ username: '', password: '', confirmPassword: '' });
                   alert('MQTT credentials updated successfully');
                 } catch (err) {
                   console.error('Error updating credentials:', err);
                   alert('Failed to update credentials: ' + (err.response?.data?.error || err.message));
                 }
               }}>
+                {/* Show username input only if not previously set */}
+                {(!info || !info.username) && (
+                  <div className="form-group">
+                    <label>Username</label>
+                    <input
+                      type="text"
+                      value={credentialsForm.username}
+                      onChange={e => setCredentialsForm({ ...credentialsForm, username: e.target.value })}
+                      required
+                      minLength="3"
+                      placeholder="Enter MQTT username"
+                    />
+                  </div>
+                )}
                 <div className="form-group">
                   <label>New Password</label>
                   <input 
@@ -523,7 +558,7 @@ function MqttDashboard() {
                     onChange={e => setCredentialsForm({...credentialsForm, password: e.target.value})} 
                     required
                     placeholder="Enter new MQTT password"
-                    minLength="6"
+                    minLength="8"
                   />
                 </div>
                 <div className="form-group">
@@ -534,13 +569,13 @@ function MqttDashboard() {
                     onChange={e => setCredentialsForm({...credentialsForm, confirmPassword: e.target.value})} 
                     required
                     placeholder="Confirm new password"
-                    minLength="6"
+                    minLength="8"
                   />
                 </div>
                 <div className="modal-actions">
                   <button type="button" className="cancel-btn" onClick={() => {
                     setShowCredentialsModal(false);
-                    setCredentialsForm({ password: '', confirmPassword: '' });
+                    setCredentialsForm({ username: '', password: '', confirmPassword: '' });
                   }}>Cancel</button>
                   <button type="submit" className="create-btn">
                     {info && info.hasPassword ? 'Update' : 'Create'} Credentials
