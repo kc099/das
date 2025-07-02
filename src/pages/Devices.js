@@ -266,7 +266,7 @@ function Devices() {
                     <p className="card-description">{device.description || 'No description provided'}</p>
                     <div className="card-stats">
                       <div className="stat">
-                        <span className="stat-value">{device.projects?.length || 0}</span>
+                        <span className="stat-value">{device.project_count ?? (device.projects?.length || 0)}</span>
                         <span className="stat-label">Projects</span>
                       </div>
                       <div className="stat">
