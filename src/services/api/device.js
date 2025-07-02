@@ -43,6 +43,11 @@ export const deviceAPI = {
     return apiClient.delete(`/api/devices/${deviceUuid}/assign-project/${projectUuid}/`);
   },
 
+  // Retrieve existing device authentication token (does NOT regenerate)
+  getToken: (deviceUuid) => {
+    return apiClient.get(`/api/devices/${deviceUuid}/token/`);
+  },
+
   // Regenerate device authentication token
   regenerateToken: (deviceUuid) => {
     return apiClient.post(`/api/devices/${deviceUuid}/regenerate-token/`);

@@ -5,6 +5,7 @@ import cacheService from '../services/cache';
 import DashboardHeader from '../components/common/DashboardHeader';
 import DashboardSidebar from '../components/common/DashboardSidebar';
 import LoadingLayout from '../components/common/LoadingLayout';
+import DeviceDataModal from '../components/common/DeviceDataModal';
 
 import '../styles/DevicesPage.css';
 import '../styles/BaseLayout.css';
@@ -20,6 +21,8 @@ function Devices() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showTokenModal, setShowTokenModal] = useState(false);
+  const [showDataModal, setShowDataModal] = useState(false);
+  const [activeDevice, setActiveDevice] = useState(null);
   const { sidebarOpen, setSidebarOpen, toggleSidebar } = useDashboardStore();
   const [newDevice, setNewDevice] = useState({
     name: '',
@@ -158,16 +161,16 @@ function Devices() {
     }
   };
 
-  const handleRegenerateToken = async (deviceUuid) => {
+  const handleShowToken = async (deviceUuid) => {
     try {
-      const response = await deviceAPI.regenerateToken(deviceUuid);
+      const response = await deviceAPI.getToken(deviceUuid);
       if (response.data) {
         setCreatedDevice(response.data);
         setShowTokenModal(true);
       }
     } catch (error) {
-      console.error('Error regenerating token:', error);
-      alert('Failed to regenerate token. Please try again.');
+      console.error('Error fetching token:', error);
+      alert('Failed to fetch token. Please try again.');
     }
   };
 
@@ -278,7 +281,7 @@ function Devices() {
                         className="btn btn-primary btn-sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleRegenerateToken(device.uuid);
+                          handleShowToken(device.uuid);
                         }}
                       >
                         Show Token
@@ -291,6 +294,16 @@ function Devices() {
                         }}
                       >
                         Delete
+                      </button>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveDevice(device);
+                          setShowDataModal(true);
+                        }}
+                      >
+                        View Data
                       </button>
                     </div>
                     <div style={{fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'right'}}>
@@ -457,6 +470,17 @@ function Devices() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Live Data Modal */}
+      {showDataModal && activeDevice && (
+        <DeviceDataModal
+          device={activeDevice}
+          onClose={() => {
+            setShowDataModal(false);
+            setActiveDevice(null);
+          }}
+        />
       )}
     </div>
   );
