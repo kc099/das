@@ -5,9 +5,12 @@
 /* Projects Grid - Flexible, Content-Based Sizing */
 .projects-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 2rem;
+  /* Responsive columns: cards take up available space but never shrink below 300px */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem; /* revert to original gap between cards */
   margin-top: 1.5rem;
+  /* Align grid flush to the left; any extra space stays on the right */
+  justify-content: flex-start;
 }
 
 /* Project Card - Independent Sizing */
@@ -28,6 +31,10 @@
   /* Future: background image support */
   background-size: cover;
   background-position: center;
+  /* Prevent cards from growing too wide on large screens */
+  max-width: 380px;
+  width: 100%;
+  margin: 0 auto; /* horizontally center within its grid cell if cell is wider */
 }
 
 .project-card:hover {
