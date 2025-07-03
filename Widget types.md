@@ -1,16 +1,6 @@
 # Widget Structure for Flow Editor, imporvements to flow UI
 
-Instead of one MQTT node,there should be three seperate nodes named 
-mqtt_pub(published input message to a topic),
-mqtt_sub (subscribes to a topic and forwards the message to next node), 
-mqtt_broker(hosts a broker with a custom username and password),
-
-Web scoket node should be two separate nodes
-websocket_in: websocket input node
-websocket_out: webscoket output node
-
-HTTP node should be instead 
-http_response: sends a request to a specified url and returns the reposne 
+Each flow editor shold show the devices connected to the project in the side window.
 
 # Dashboard Template Components
 
