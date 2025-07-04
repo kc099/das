@@ -34,6 +34,7 @@ function Devices() {
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [availableProjects, setAvailableProjects] = useState([]);
   const { incrementStat, decrementStat, refresh: refreshStats } = useStatActions();
+  const [latestReadings, setLatestReadings] = useState({});
 
   useEffect(() => {
     const initializeDevices = async () => {
@@ -75,6 +76,38 @@ function Devices() {
 
     initializeDevices();
   }, [navigate]);
+
+  useEffect(() => {
+    // Open a shared websocket to receive live sensor updates for all devices
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const envBase = process.env.REACT_APP_WS_BASE_URL;
+    let base;
+    if (envBase) {
+      base = envBase.replace(/\/$/, '');
+    } else if (window.location.port === '3000') {
+      base = `${protocol}://${window.location.hostname}:8000`;
+    } else {
+      base = `${protocol}://${window.location.host}`;
+    }
+
+    const accessToken = localStorage.getItem('access_token');
+    const ws = new WebSocket(`${base}/ws/sensors/${accessToken ? `?token=${encodeURIComponent(accessToken)}` : ''}`);
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'sensor_data' && data.device_id && data.sensor_type != null) {
+          setLatestReadings((prev) => {
+            const deviceMap = prev[data.device_id] ? { ...prev[data.device_id] } : {};
+            deviceMap[data.sensor_type] = data;
+            return { ...prev, [data.device_id]: deviceMap };
+          });
+        }
+      } catch (e) {
+        // ignore parse errors
+      }
+    };
+    return () => ws.close();
+  }, []);
 
   const loadDevices = async () => {
     try {
@@ -254,65 +287,68 @@ function Devices() {
             </div>
           ) : (
             <div className="devices-grid">
-              {devices.map(device => (
-                <div key={device.uuid} className="device-card">
-                  <div className="card-header">
-                    <h3 className="card-title">{device.name}</h3>
-                    <span className={`status-badge ${device.status === 'active' ? 'status-success' : device.status === 'offline' ? 'status-danger' : 'status-neutral'}`}>
-                      {device.status}
-                    </span>
-                  </div>
-                  <div className="card-content">
-                    <p className="card-description">{device.description || 'No description provided'}</p>
-                    <div className="card-stats">
-                      <div className="stat">
-                        <span className="stat-value">{device.project_count ?? (device.projects?.length || 0)}</span>
-                        <span className="stat-label">Projects</span>
+              {devices.map(device => {
+                const variableCount = latestReadings[device.uuid] ? Object.keys(latestReadings[device.uuid]).length : 0;
+                return (
+                  <div key={device.uuid} className="device-card">
+                    <div className="card-header">
+                      <h3 className="card-title">{device.name}</h3>
+                      <span className={`status-badge ${device.status === 'active' ? 'status-success' : device.status === 'offline' ? 'status-danger' : 'status-neutral'}`}>
+                        {device.status}
+                      </span>
+                    </div>
+                    <div className="card-content">
+                      <p className="card-description">{device.description || 'No description provided'}</p>
+                      <div className="card-stats">
+                        <div className="stat">
+                          <span className="stat-value">{device.project_count ?? (device.projects?.length || 0)}</span>
+                          <span className="stat-label">Projects</span>
+                        </div>
+                        <div className="stat">
+                          <span className="stat-value">{variableCount}</span>
+                          <span className="stat-label">Variables</span>
+                        </div>
                       </div>
-                      <div className="stat">
-                        <span className="stat-value">{device.token ? '••••' : 'None'}</span>
-                        <span className="stat-label">Token</span>
+                    </div>
+                    <div className="card-footer">
+                      <div style={{display: 'flex', gap: '0.5rem', flex: 1}}>
+                        <button 
+                          className="btn btn-primary btn-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleShowToken(device.uuid);
+                          }}
+                        >
+                          Show Token
+                        </button>
+                        <button 
+                          className="btn btn-danger btn-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteDevice(device.uuid);
+                          }}
+                        >
+                          Delete
+                        </button>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveDevice(device);
+                            setShowDataModal(true);
+                          }}
+                        >
+                          View Data
+                        </button>
+                      </div>
+                      <div style={{fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'right'}}>
+                        <div>{device.organization?.name}</div>
+                        <div>Updated {new Date(device.updated_at).toLocaleDateString()}</div>
                       </div>
                     </div>
                   </div>
-                  <div className="card-footer">
-                    <div style={{display: 'flex', gap: '0.5rem', flex: 1}}>
-                      <button 
-                        className="btn btn-primary btn-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleShowToken(device.uuid);
-                        }}
-                      >
-                        Show Token
-                      </button>
-                      <button 
-                        className="btn btn-danger btn-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteDevice(device.uuid);
-                        }}
-                      >
-                        Delete
-                      </button>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveDevice(device);
-                          setShowDataModal(true);
-                        }}
-                      >
-                        View Data
-                      </button>
-                    </div>
-                    <div style={{fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'right'}}>
-                      <div>{device.organization?.name}</div>
-                      <div>Updated {new Date(device.updated_at).toLocaleDateString()}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </main>

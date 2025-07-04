@@ -34,7 +34,7 @@ function DeviceDataModal({ device, onClose }) {
       base = `${protocol}://${window.location.host}`;
     }
 
-    const wsUrl = `${base}/ws/sensors/${accessToken ? `?token=${accessToken}` : ''}`;
+    const wsUrl = `${base}/ws/sensors/${accessToken ? `?token=${encodeURIComponent(accessToken)}` : ''}`;
 
     socketRef.current = new WebSocket(wsUrl);
 
