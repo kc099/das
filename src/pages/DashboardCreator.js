@@ -75,6 +75,7 @@ function DashboardCreator() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
 
   // Widget Library
   const widgetLibrary = [
@@ -327,7 +328,36 @@ function DashboardCreator() {
               ← Back to Project
             </button>
             <div className="title-section">
-              <h1>{currentTemplate?.name || 'Dashboard Editor'}</h1>
+              {isEditingName ? (
+                <input
+                  type="text"
+                  value={currentTemplate?.name || ''}
+                  onChange={(e) => setCurrentTemplate((prev) => ({ ...prev, name: e.target.value }))}
+                  onBlur={() => setIsEditingName(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === 'Escape') {
+                      setIsEditingName(false);
+                    }
+                  }}
+                  className="dashboard-name-input"
+                  autoFocus
+                  style={{
+                    fontSize: '1.5rem',
+                    fontWeight: '600',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    padding: '2px 6px',
+                    minWidth: '200px'
+                  }}
+                />
+              ) : (
+                <h1
+                  onDoubleClick={() => setIsEditingName(true)}
+                  style={{ cursor: 'pointer', margin: 0, fontSize: '1.8rem', fontWeight: 600 }}
+                >
+                  {currentTemplate?.name || 'Dashboard Editor'}
+                </h1>
+              )}
               <span className="project-name">{project?.name}</span>
             </div>
           </div>

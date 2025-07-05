@@ -32,8 +32,8 @@ const nodeTypes = {
 function FlowEditor() {
   const navigate = useNavigate();
   const { projectUuid, flowId } = useParams();
-  const [nodes, setNodes, onNodesChange] = useNodesState(defaultFlowData.nodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(defaultFlowData.edges);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [flowMeta, setFlowMeta] = useState(flowMetadata);
   const [selectedNode, setSelectedNode] = useState(null);
   const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
@@ -42,6 +42,7 @@ function FlowEditor() {
   const [saveStatus, setSaveStatus] = useState('');
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  const [isEditingName, setIsEditingName] = useState(false);
 
   const loadFlowFromAPI = useCallback(async (id) => {
     try {
@@ -141,7 +142,8 @@ function FlowEditor() {
         edges: reactFlowInstance.toObject().edges,
         metadata: flowMeta.metadata || {},
         version: flowMeta.version,
-        tags: flowMeta.tags || []
+        tags: flowMeta.tags || [],
+        project_uuid: projectUuid || undefined
       };
 
       let response;
@@ -153,7 +155,11 @@ function FlowEditor() {
         response = await flowAPI.createFlow(flowData);
         setCurrentFlowId(response.data.uuid);
         // Update URL to include flow UUID
-        navigate(`/flow-editor/${response.data.uuid}`, { replace: true });
+        if (projectUuid) {
+          navigate(`/project/${projectUuid}/flow/${response.data.uuid}`, { replace: true });
+        } else {
+          navigate(`/flow-editor/${response.data.uuid}`, { replace: true });
+        }
       }
       
       setSaveStatus('Saved!');
@@ -164,7 +170,7 @@ function FlowEditor() {
       setTimeout(() => setSaveStatus(''), 3000);
       alert('Error saving flow: ' + (error.response?.data?.detail || error.message));
     }
-  }, [reactFlowInstance, flowMeta, currentFlowId, navigate]);
+  }, [reactFlowInstance, flowMeta, currentFlowId, navigate, projectUuid]);
 
   const loadFlow = useCallback(() => {
     // For now, redirect to flow selection/dashboard
@@ -221,11 +227,17 @@ function FlowEditor() {
       <header className="flow-header">
         <div className="flow-header-left">
           <button
-            className="back-to-dashboard"
-            onClick={() => navigate('/home')}
-            title="Back to Home"
+            className="back-btn"
+            onClick={() => {
+              if (projectUuid) {
+                navigate(`/project/${projectUuid}`);
+              } else {
+                navigate('/dashboard');
+              }
+            }}
+            title="Back to Project"
           >
-            ← Home
+            ← Back to Project
           </button>
           <button
             className="palette-toggle"
@@ -234,7 +246,29 @@ function FlowEditor() {
             ☰
           </button>
           <h1>Flow Editor</h1>
-          <span className="flow-name">{flowMeta.name}</span>
+          {isEditingName ? (
+            <input
+              className="flow-name-input"
+              type="text"
+              value={flowMeta.name}
+              onChange={(e) => setFlowMeta({ ...flowMeta, name: e.target.value })}
+              onBlur={() => setIsEditingName(false)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === 'Escape') {
+                  setIsEditingName(false);
+                }
+              }}
+              autoFocus
+            />
+          ) : (
+            <span
+              className="flow-name"
+              onDoubleClick={() => setIsEditingName(true)}
+              style={{ cursor: 'pointer' }}
+            >
+              {flowMeta.name}
+            </span>
+          )}
           {saveStatus && <span className="save-status">{saveStatus}</span>}
         </div>
         <div className="flow-header-right">

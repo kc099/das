@@ -140,48 +140,14 @@ function ProjectDashboard() {
     }
   };
 
-  const handleCreateFlow = async () => {
-    try {
-      const newFlowData = {
-        name: 'New Flow',
-        description: 'A new flow diagram',
-        project_uuid: projectUuid,
-        nodes: [],
-        edges: [],
-        metadata: {},
-        tags: []
-      };
-      
-      const response = await flowAPI.createFlow(newFlowData);
-      if (response.data) {
-        // Navigate to flow editor with the new flow
-        navigate(`/project/${projectUuid}/flow/${response.data.uuid}`);
-      }
-    } catch (error) {
-      console.error('Error creating flow:', error);
-    }
+  const handleCreateFlow = () => {
+    // Navigate to FlowEditor for a new (unsaved) flow
+    navigate(`/project/${projectUuid}/flow`);
   };
 
-  const handleCreateDashboard = async () => {
-    try {
-      const newDashboardData = {
-        name: 'New Dashboard',
-        description: 'A new dashboard template',
-        organization_id: project.organization.id,
-        project_id: project.id,
-        layout: {},
-        widgets: [],
-        datasources: []
-      };
-      
-      const response = await dashboardAPI.createTemplate(newDashboardData);
-      if (response.data.status === 'success') {
-        // Navigate to dashboard creator with the new template
-        navigate(`/project/${projectUuid}/dashboard/${response.data.template.uuid}`);
-      }
-    } catch (error) {
-      console.error('Error creating dashboard:', error);
-    }
+  const handleCreateDashboard = () => {
+    // Navigate to DashboardCreator for a new (unsaved) dashboard template
+    navigate(`/project/${projectUuid}/dashboard`);
   };
 
   const handleDeleteFlow = async (event, flowUuid) => {

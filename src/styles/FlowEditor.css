@@ -247,3 +247,29 @@
   background-color: #218838;
   border-color: #1e7e34;
 }
+
+.back-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.back-btn:hover {
+  background: #e2e8f0;
+  transform: translateX(-2px);
+}
+
+.flow-name-input {
+  margin-left: 0.5rem;
+  padding: 2px 6px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}

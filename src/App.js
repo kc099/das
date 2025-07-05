@@ -36,7 +36,13 @@ function App() {
         
         {/* Project-centric routes */}
         <Route path="/project/:projectUuid" element={<ProjectDashboard />} />
+        {/* New (unsaved) Flow */}
+        <Route path="/project/:projectUuid/flow" element={<FlowEditor />} />
+        {/* Existing Flow */}
         <Route path="/project/:projectUuid/flow/:flowId" element={<FlowEditor />} />
+        {/* New (unsaved) Dashboard */}
+        <Route path="/project/:projectUuid/dashboard" element={<DashboardCreator />} />
+        {/* Existing Dashboard */}
         <Route path="/project/:projectUuid/dashboard/:templateId" element={<DashboardCreator />} />
         
         {/* Legacy routes for backward compatibility */}
