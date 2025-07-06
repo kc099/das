@@ -15,7 +15,7 @@ import NodePalette from '../components/flow/NodePalette';
 import CustomNode from '../components/flow/CustomNode';
 import CommentNode from '../components/flow/CommentNode';
 import PropertiesPanel from '../components/flow/PropertiesPanel';
-import { nodeCategories, defaultFlowData, flowMetadata } from '../data/nodeTypes';
+import { nodeCategories, flowMetadata } from '../data/nodeTypes';
 import { flowAPI } from '../services/api';
 import '../styles/FlowEditor.css';
 
