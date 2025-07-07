@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './PropertiesPanel.css';
 
 function PropertiesPanel({ selectedNode, onUpdateNode, onClose, projectId }) {
@@ -6,7 +6,9 @@ function PropertiesPanel({ selectedNode, onUpdateNode, onClose, projectId }) {
   const [selectedWidgetType, setSelectedWidgetType] = useState('');
   const [isCreatingWidget, setIsCreatingWidget] = useState(false);
 
-  if (!selectedNode) return null;
+  // State to hold available variables for device nodes
+  const [deviceVariables, setDeviceVariables] = useState([]);
+  const wsRef = useRef(null);
 
   const widgetTypes = [
     { value: 'time_series', label: 'Time Series', description: 'Display data over time with line charts' },
@@ -16,6 +18,73 @@ function PropertiesPanel({ selectedNode, onUpdateNode, onClose, projectId }) {
     { value: 'pie_chart', label: 'Pie Chart', description: 'Show proportions with circular chart' },
     { value: 'table', label: 'Table', description: 'Display data in tabular format' },
   ];
+
+  // When a device node is selected, open a websocket to gather variable names (sensor_type)
+  useEffect(() => {
+    // Clean up any existing socket
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
+    if (!selectedNode || selectedNode.data.category !== 'device') {
+      setDeviceVariables([]);
+      return;
+    }
+
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const accessToken = localStorage.getItem('access_token');
+
+    const envBase = process.env.REACT_APP_WS_BASE_URL;
+    let base;
+    if (envBase) {
+      base = envBase.replace(/\/$/, '');
+    } else if (window.location.port === '3000') {
+      base = `${protocol}://${window.location.hostname}:8000`;
+    } else {
+      base = `${protocol}://${window.location.host}`;
+    }
+
+    const wsUrl = `${base}/ws/sensors/${accessToken ? `?token=${encodeURIComponent(accessToken)}` : ''}`;
+
+    try {
+      wsRef.current = new WebSocket(wsUrl);
+
+      wsRef.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (
+            data.device_id === selectedNode.data.config.deviceUuid ||
+            data.device_id === selectedNode.data.config.device_id
+          ) {
+            const variable = data.sensor_type;
+            if (variable) {
+              setDeviceVariables((prev) => {
+                if (prev.includes(variable)) return prev;
+                return [...prev, variable];
+              });
+            }
+          }
+        } catch (e) {
+          // ignore malformed data
+        }
+      };
+    } catch (err) {
+      console.error('Failed to open WebSocket for device variables', err);
+    }
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
+  }, [selectedNode]);
+
+  // After hooks – safely bail out on no selection
+  if (!selectedNode) {
+    return null;
+  }
 
   const handleVisualizeOutput = async () => {
     if (!selectedWidgetType || !projectId) return;
@@ -230,12 +299,46 @@ function PropertiesPanel({ selectedNode, onUpdateNode, onClose, projectId }) {
           )}
         </div>
 
+        {/* Device specific section */}
+        {selectedNode.data.category === 'device' && (
+          <div className="property-section">
+            <h4>Device Settings</h4>
+
+            <div className="config-field">
+              <label>Device:</label>
+              <span className="readonly-field">{selectedNode.data.label}</span>
+            </div>
+
+            <div className="config-field">
+              <label>Variable:</label>
+              {deviceVariables.length > 0 ? (
+                <select
+                  value={selectedNode.data.config?.variable || ''}
+                  onChange={(e) => updateNodeConfig('variable', e.target.value)}
+                >
+                  <option value="">Select variable</option>
+                  {deviceVariables.map((v) => (
+                    <option key={v} value={v}>{v}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="Variable name"
+                  value={selectedNode.data.config?.variable || ''}
+                  onChange={(e) => updateNodeConfig('variable', e.target.value)}
+                />
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Configuration properties */}
         {selectedNode.data.config && Object.keys(selectedNode.data.config).length > 0 && (
           <div className="property-section">
             <h4>Configuration</h4>
             {Object.entries(selectedNode.data.config).map(([key, value]) =>
-              renderConfigField(key, value)
+              (key === 'variable' || key === 'deviceUuid') ? null : renderConfigField(key, value)
             )}
           </div>
         )}

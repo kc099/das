@@ -1,14 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as Icons from 'lucide-react';
 import './NodePalette.css';
 
 function NodePalette({ categories, isCollapsed }) {
-  const [expandedCategories, setExpandedCategories] = useState({
-    common: true,
-    function: false,
-    network: false,
-    storage: false
-  });
+  // Initialize category expansion state based on provided categories
+  const createInitialExpanded = () => {
+    const initial = {};
+    Object.keys(categories).forEach((key) => {
+      // Keep "common" expanded by default, others collapsed
+      initial[key] = key === 'common';
+    });
+    return initial;
+  };
+
+  const [expandedCategories, setExpandedCategories] = useState(createInitialExpanded);
+
+  // When categories prop changes (e.g., devices loaded dynamically), ensure new
+  // categories are present in the expanded state so toggling works correctly.
+  useEffect(() => {
+    setExpandedCategories((prev) => {
+      const updated = { ...prev };
+      Object.keys(categories).forEach((key) => {
+        if (!(key in updated)) {
+          updated[key] = key === 'common';
+        }
+      });
+      return updated;
+    });
+  }, [categories]);
 
   const [searchTerm, setSearchTerm] = useState('');
 

@@ -17,6 +17,7 @@ import CommentNode from '../components/flow/CommentNode';
 import PropertiesPanel from '../components/flow/PropertiesPanel';
 import { nodeCategories, flowMetadata } from '../data/nodeTypes';
 import { flowAPI } from '../services/api';
+import { deviceAPI } from '../services/api/device';
 import '../styles/FlowEditor.css';
 
 const nodeTypes = {
@@ -25,6 +26,7 @@ const nodeTypes = {
   function: CustomNode,
   network: CustomNode,
   storage: CustomNode,
+  device: CustomNode,
   comment: CommentNode,
   debug: CustomNode
 };
@@ -35,6 +37,7 @@ function FlowEditor() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [flowMeta, setFlowMeta] = useState(flowMetadata);
+  const [paletteCategories, setPaletteCategories] = useState(nodeCategories);
   const [selectedNode, setSelectedNode] = useState(null);
   const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
   const [currentFlowId, setCurrentFlowId] = useState(flowId);
@@ -74,6 +77,55 @@ function FlowEditor() {
       loadFlowFromAPI(flowId);
     }
   }, [flowId, loadFlowFromAPI]);
+
+  // Fetch devices for the project and populate the Device category in the palette
+  useEffect(() => {
+    async function fetchDevices() {
+      if (!projectUuid) return;
+      try {
+        const response = await deviceAPI.getDevicesByProject(projectUuid);
+        const devices = response.data?.results || response.data || [];
+
+        // Build nodes for each device
+        const deviceNodes = {};
+        devices.forEach((dev) => {
+          deviceNodes[dev.uuid] = {
+            label: dev.name,
+            icon: 'HardDrive',
+            config: {
+              deviceUuid: dev.uuid,
+              variable: ''
+            }
+          };
+        });
+
+        // Ensure device category exists in the global nodeCategories constant
+        if (!nodeCategories.device) {
+          nodeCategories.device = {
+            label: 'Device',
+            color: '#0ea5e9',
+            nodes: {}
+          };
+        }
+
+        // Mutate global constant so CustomNode can access icons/colors
+        nodeCategories.device.nodes = deviceNodes;
+
+        // Update local palette state for NodePalette component
+        setPaletteCategories((prev) => ({
+          ...prev,
+          device: {
+            ...(prev.device || { label: 'Device', color: '#0ea5e9', nodes: {} }),
+            nodes: deviceNodes
+          }
+        }));
+      } catch (err) {
+        console.error('Failed to fetch devices for project', err);
+      }
+    }
+
+    fetchDevices();
+  }, [projectUuid]);
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
@@ -290,7 +342,7 @@ function FlowEditor() {
       <div className="flow-content">
         {/* Node Palette */}
         <NodePalette 
-          categories={nodeCategories}
+          categories={paletteCategories}
           isCollapsed={isPaletteCollapsed}
         />
 

@@ -128,6 +128,11 @@ export const nodeCategories = {
         }
       }
     }
+  },
+  device: {
+    label: 'Device',
+    color: '#0ea5e9',
+    nodes: {}
   }
 };
 
