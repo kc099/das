@@ -193,15 +193,9 @@ function ProjectDashboard() {
     }
   };
 
+  // Suppress intermediate loading page – simply render nothing until data arrives
   if (loading) {
-    return (
-      <div className="page-container">
-        <div className="uniform-loading">
-          <div className="uniform-loading-spinner"></div>
-          <p>Loading project...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (error) {
