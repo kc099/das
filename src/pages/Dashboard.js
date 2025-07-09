@@ -4,7 +4,7 @@ import { authAPI, projectAPI, organizationAPI } from '../services/api';
 import cacheService from '../services/cache';
 import DashboardHeader from '../components/common/DashboardHeader';
 import DashboardSidebar from '../components/common/DashboardSidebar';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { useAuth } from '../hooks/useAuth';
 import { useStatActions } from '../hooks/useDashboardStats';
 import useDashboardStore from '../store/dashboardStore';
 import '../styles/Dashboard.css';
@@ -124,7 +124,7 @@ function Dashboard() {
           />
           <main className="main-content">
             <div className="content-wrapper">
-              <LoadingSpinner message="Loading your projects..." />
+              <p>Loading your projects...</p>
             </div>
           </main>
         </div>

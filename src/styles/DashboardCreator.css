@@ -881,6 +881,8 @@
   transition: all 200ms ease;
   transition-property: left, top;
   display: flex !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
 }
 
 .react-grid-item.cssTransforms {
@@ -891,6 +893,9 @@
   width: 100% !important;
   height: 100% !important;
   position: relative;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
 }
 
 .grid-widget-wrapper {
@@ -899,6 +904,9 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .grid-widget-wrapper .widget-container {
@@ -938,53 +946,58 @@
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  z-index: 10;
+  z-index: 1000;
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: all 0.2s ease;
 }
 
+.grid-widget-wrapper:hover .widget-controls {
+  opacity: 1;
+}
+
+.widget-properties-btn,
 .delete-widget-btn {
   background: rgba(107, 114, 128, 0.9);
   color: white;
   border: none;
   border-radius: 4px;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: normal;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
   transition: all 0.2s ease;
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 1000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(4px);
   pointer-events: auto;
 }
 
+.widget-properties-btn:hover {
+  background: rgba(59, 130, 246, 0.9);
+  transform: scale(1.05);
+  box-shadow: 0 3px 12px rgba(59, 130, 246, 0.3);
+}
+
 .delete-widget-btn:hover {
-  opacity: 1;
   background: rgba(239, 68, 68, 0.9);
   transform: scale(1.05);
   box-shadow: 0 3px 12px rgba(239, 68, 68, 0.3);
 }
 
-.grid-widget-wrapper:hover .delete-widget-btn {
-  opacity: 1;
-}
-
-/* Prevent drag interference with delete button */
-.react-grid-item .delete-widget-btn {
+/* Prevent drag interference with widget controls */
+.react-grid-item .widget-controls {
   pointer-events: all;
   position: relative;
   z-index: 1001;
 }
 
-.react-grid-item.react-draggable-dragging .delete-widget-btn {
+.react-grid-item.react-draggable-dragging .widget-controls {
   pointer-events: none;
 }
 

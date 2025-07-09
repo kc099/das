@@ -1,7 +1,6 @@
 import React from 'react';
 import DashboardHeader from './DashboardHeader';
 import DashboardSidebar from './DashboardSidebar';
-import LoadingSpinner from './LoadingSpinner';
 import useDashboardStore from '../../store/dashboardStore';
 
 /**
@@ -35,7 +34,14 @@ const LoadingLayout = ({ user = null, message = 'Loading...' }) => {
         />
         <main className="main-content">
           <div className="content-wrapper">
-            <LoadingSpinner message={message} />
+            <p style={{ 
+              textAlign: 'center', 
+              color: '#9ca3af', 
+              fontStyle: 'italic',
+              padding: '2rem'
+            }}>
+              {message}
+            </p>
           </div>
         </main>
       </div>

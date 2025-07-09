@@ -248,8 +248,14 @@ function MqttDashboard() {
   if (!user) {
     return (
       <div className="page-container">
-        <div className="loading">
-          <div className="loading-spinner"></div>
+        <div className="loading" style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh',
+          color: '#9ca3af',
+          fontStyle: 'italic'
+        }}>
           <p>Loading...</p>
         </div>
       </div>

@@ -67,7 +67,8 @@ function ProjectDashboard() {
         // Load project dashboard templates
         const dashboardsResponse = await dashboardAPI.getTemplates();
         if (dashboardsResponse.data.status === 'success') {
-          const projectDashboards = dashboardsResponse.data.templates.filter(
+          const templates = dashboardsResponse.data.results || dashboardsResponse.data.templates || [];
+          const projectDashboards = templates.filter(
             template => template.project && template.project.uuid === projectUuid
           );
           setDashboards(projectDashboards);

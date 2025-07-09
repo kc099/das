@@ -265,8 +265,14 @@ function FlowEditor() {
   if (isLoading) {
     return (
       <div className="flow-editor">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh',
+          color: '#9ca3af',
+          fontStyle: 'italic'
+        }}>
           <p>Loading flow...</p>
         </div>
       </div>
@@ -380,6 +386,7 @@ function FlowEditor() {
           onUpdateNode={handleUpdateNode}
           onClose={() => setSelectedNode(null)}
           projectId={projectUuid}
+          flowId={currentFlowId}
         />
       </div>
     </div>

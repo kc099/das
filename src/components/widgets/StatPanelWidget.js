@@ -2,13 +2,31 @@ import React from 'react';
 import BaseWidget from './BaseWidget';
 import './Widgets.css';
 
-const StatPanelContent = ({ data }) => {
+const StatPanelContent = ({ data, showLoadingState, dataSource }) => {
   const sampleData = { 
     value: 1247, 
     unit: 'devices', 
     trend: '+12%',
     trendDirection: 'up'
   };
+  
+  if (showLoadingState) {
+    return (
+      <div className="widget-loading-state" style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        color: '#9ca3af',
+        textAlign: 'center',
+        fontSize: '0.9rem'
+      }}>
+        <p style={{ margin: 0, fontStyle: 'italic' }}>
+          Connecting to {dataSource?.nodeName || 'flow node'}...
+        </p>
+      </div>
+    );
+  }
   
   const statData = Object.keys(data).length > 0 ? data : sampleData;
   const { value, unit, trend, trendDirection } = statData;
@@ -63,6 +81,16 @@ const StatPanelContent = ({ data }) => {
 };
 
 const StatPanelWidget = ({ widget, data = {} }) => {
+  // Check if this widget has a dataSource configured (from flow editor)
+  const hasDataSource = widget.dataSource && widget.dataSource.type;
+  
+  // Determine what data to show
+  let showLoadingState = false;
+  
+  if (hasDataSource && Object.keys(data).length === 0) {
+    showLoadingState = true;
+  }
+  
   const footer = widget.query ? (
     <small className="widget-query">Query: {widget.query}</small>
   ) : null;
@@ -74,7 +102,11 @@ const StatPanelWidget = ({ widget, data = {} }) => {
       className="widget-container"
       data-widget-type={widget.type}
     >
-      <StatPanelContent data={data} />
+      <StatPanelContent 
+        data={data} 
+        showLoadingState={showLoadingState}
+        dataSource={widget.dataSource}
+      />
     </BaseWidget>
   );
 };

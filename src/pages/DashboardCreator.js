@@ -4,6 +4,7 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { projectAPI, dashboardAPI } from '../services/api';
 import WidgetFactory from '../components/widgets/WidgetFactory';
+import WidgetPropertiesPanel from '../components/widgets/WidgetPropertiesPanel';
 import '../styles/DashboardCreator.css';
 import '../components/widgets/Widgets.css';
 import GridLayout from 'react-grid-layout';
@@ -76,6 +77,8 @@ function DashboardCreator() {
   const [error, setError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [selectedWidget, setSelectedWidget] = useState(null);
+  const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
 
   // Widget Library
   const widgetLibrary = [
@@ -143,13 +146,23 @@ function DashboardCreator() {
           const templateResponse = await dashboardAPI.getTemplate(templateId);
           if (templateResponse.data.status === 'success') {
             const template = templateResponse.data.template;
+            
+            console.log('📋 Loading dashboard template:', template.name);
+            console.log('🔧 Template widgets:', template.widgets);
+            console.log('📐 Template layout:', template.layout);
+            
             // Ensure widgets and layout are always arrays
-            setCurrentTemplate({
+            const processedTemplate = {
               ...template,
               widgets: Array.isArray(template.widgets) ? template.widgets : [],
               layout: Array.isArray(template.layout) ? template.layout : [],
               datasources: Array.isArray(template.datasources) ? template.datasources : []
-            });
+            };
+            
+            console.log('✅ Processed template widgets:', processedTemplate.widgets.length);
+            console.log('✅ Processed template layout:', processedTemplate.layout.length);
+            
+            setCurrentTemplate(processedTemplate);
           }
         } else {
           // Create a new empty template for the project
@@ -182,7 +195,7 @@ function DashboardCreator() {
 
   const getWidgetDimensions = (widgetType) => {
     const dimensionMap = {
-      'time_series': { w: 8, h: 8, minW: 4, minH: 6 },
+      'time_series': { w: 6, h: 8, minW: 4, minH: 6 },
       'bar_chart': { w: 6, h: 8, minW: 4, minH: 6 },
       'pie_chart': { w: 6, h: 6, minW: 3, minH: 4 },
       'gauge': { w: 4, h: 4, minW: 3, minH: 3 },
@@ -290,11 +303,41 @@ function DashboardCreator() {
     }
   };
 
+  const handleShowWidgetProperties = (widget, event) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    setSelectedWidget(widget);
+    setShowPropertiesPanel(true);
+  };
+
+  const handleClosePropertiesPanel = () => {
+    setShowPropertiesPanel(false);
+    setSelectedWidget(null);
+  };
+
+  const handleUpdateWidgetProperties = (widgetId, updatedProperties) => {
+    setCurrentTemplate(prev => ({
+      ...prev,
+      widgets: prev.widgets.map(widget => 
+        widget.id === widgetId 
+          ? { ...widget, ...updatedProperties }
+          : widget
+      )
+    }));
+  };
+
   if (loading) {
     return (
       <div className="dashboard-creator-container">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh',
+          color: '#9ca3af',
+          fontStyle: 'italic'
+        }}>
           <p>Loading Dashboard Creator...</p>
         </div>
       </div>
@@ -415,29 +458,44 @@ function DashboardCreator() {
                     className="widgets-grid"
                     layout={currentTemplate.layout || []}
                     cols={12}
-                    rowHeight={40}
+                    rowHeight={60}
                     compactType="vertical"
                     isResizable
                     isDraggable
-                    onLayoutChange={handleLayoutChange}
-                    margin={[12, 12]}
+                    onLayoutChange={(newLayout) => {
+                      console.log('🔄 Grid layout changed:', newLayout);
+                      console.log('📏 Current layout before change:', currentTemplate.layout);
+                      handleLayoutChange(newLayout);
+                    }}
+                    margin={[16, 16]}
                   >
                     {(currentTemplate.widgets || []).map(widget => (
                       <div key={widget.id} className="grid-widget-wrapper">
-                        <button 
-                          className="delete-widget-btn"
-                          onClick={(e) => handleDeleteWidget(widget.id, e)}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          title="Remove Widget"
-                        >
-                          −
-                        </button>
+                        <div className="widget-controls">
+                          <button 
+                            className="widget-properties-btn"
+                            onClick={(e) => handleShowWidgetProperties(widget, e)}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            title="Widget Properties"
+                          >
+                            ⚙️
+                          </button>
+                          <button 
+                            className="delete-widget-btn"
+                            onClick={(e) => handleDeleteWidget(widget.id, e)}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            title="Remove Widget"
+                          >
+                            −
+                          </button>
+                        </div>
                         <WidgetFactory
                           key={widget.id}
                           widget={{
                             ...widget,
                             data: []
                           }}
+                          dashboardUuid={templateId}
                           onUpdate={() => {}}
                         />
                       </div>
@@ -448,6 +506,16 @@ function DashboardCreator() {
             </div>
           </div>
         </main>
+
+        {/* Widget Properties Panel */}
+        {showPropertiesPanel && selectedWidget && (
+          <WidgetPropertiesPanel
+            widget={selectedWidget}
+            onClose={handleClosePropertiesPanel}
+            onUpdate={(updatedProperties) => handleUpdateWidgetProperties(selectedWidget.id, updatedProperties)}
+            projectUuid={projectUuid}
+          />
+        )}
       </div>
     </DndProvider>
   );

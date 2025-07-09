@@ -3,7 +3,10 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import './Widgets.css';
 
 const BarChartWidget = ({ widget, data = [] }) => {
-  // Sample data if no real data provided
+  // Check if this widget has a dataSource configured (from flow editor)
+  const hasDataSource = widget.dataSource && widget.dataSource.type;
+  
+  // Sample data if no real data provided AND no dataSource configured
   const sampleData = [
     { name: 'Device 1', sensors: 12, alerts: 3 },
     { name: 'Device 2', sensors: 8, alerts: 1 },
@@ -12,7 +15,22 @@ const BarChartWidget = ({ widget, data = [] }) => {
     { name: 'Device 5', sensors: 6, alerts: 0 },
   ];
 
-  const chartData = data.length > 0 ? data : sampleData;
+  // Determine what data to show
+  let chartData;
+  let showLoadingState = false;
+  
+  if (hasDataSource) {
+    // Widget has a dataSource - either show real data or loading state
+    if (data.length > 0) {
+      chartData = data;
+    } else {
+      showLoadingState = true;
+      chartData = []; // No sample data for dataSource widgets
+    }
+  } else {
+    // Widget has no dataSource - show real data or sample data
+    chartData = data.length > 0 ? data : sampleData;
+  }
 
   return (
     <div className="widget-container" data-widget-type={widget.type}>
@@ -24,8 +42,23 @@ const BarChartWidget = ({ widget, data = [] }) => {
         </div>
       </div>
       <div className="widget-content">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData}>
+        {showLoadingState ? (
+          <div className="widget-loading-state" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            color: '#9ca3af',
+            textAlign: 'center',
+            fontSize: '0.9rem'
+          }}>
+            <p style={{ margin: 0, fontStyle: 'italic' }}>
+              Connecting to {widget.dataSource?.nodeName || 'flow node'}...
+            </p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
             <XAxis 
               dataKey="name" 
@@ -58,6 +91,7 @@ const BarChartWidget = ({ widget, data = [] }) => {
             )}
           </BarChart>
         </ResponsiveContainer>
+        )}
       </div>
       {widget.query && (
         <div className="widget-footer">

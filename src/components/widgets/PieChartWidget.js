@@ -3,7 +3,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import './Widgets.css';
 
 const PieChartWidget = ({ widget, data = [] }) => {
-  // Sample data if no real data provided
+  // Check if this widget has a dataSource configured (from flow editor)
+  const hasDataSource = widget.dataSource && widget.dataSource.type;
+  
+  // Sample data if no real data provided AND no dataSource configured
   const sampleData = [
     { name: 'Temperature', value: 35, color: '#22c55e' },
     { name: 'Humidity', value: 25, color: '#059669' },
@@ -12,7 +15,22 @@ const PieChartWidget = ({ widget, data = [] }) => {
     { name: 'Light', value: 5, color: '#065f46' },
   ];
 
-  const chartData = data.length > 0 ? data : sampleData;
+  // Determine what data to show
+  let chartData;
+  let showLoadingState = false;
+  
+  if (hasDataSource) {
+    // Widget has a dataSource - either show real data or loading state
+    if (data.length > 0) {
+      chartData = data;
+    } else {
+      showLoadingState = true;
+      chartData = []; // No sample data for dataSource widgets
+    }
+  } else {
+    // Widget has no dataSource - show real data or sample data
+    chartData = data.length > 0 ? data : sampleData;
+  }
   
   // Generate colors if not provided
   const colors = ['#22c55e', '#059669', '#10b981', '#047857', '#065f46', '#064e3b'];
@@ -52,8 +70,23 @@ const PieChartWidget = ({ widget, data = [] }) => {
         </div>
       </div>
       <div className="widget-content">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
+        {showLoadingState ? (
+          <div className="widget-loading-state" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            color: '#9ca3af',
+            textAlign: 'center',
+            fontSize: '0.9rem'
+          }}>
+            <p style={{ margin: 0, fontStyle: 'italic' }}>
+              Connecting to {widget.dataSource?.nodeName || 'flow node'}...
+            </p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
             <Pie
               data={dataWithColors}
               cx="50%"
@@ -82,6 +115,7 @@ const PieChartWidget = ({ widget, data = [] }) => {
             />
           </PieChart>
         </ResponsiveContainer>
+        )}
       </div>
       {widget.query && (
         <div className="widget-footer">

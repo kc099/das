@@ -1,10 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './PropertiesPanel.css';
+import { flowAPI } from '../../services/api/flow';
+import { dashboardAPI } from '../../services/api/dashboard';
 
-function PropertiesPanel({ selectedNode, onUpdateNode, onClose, projectId }) {
+function PropertiesPanel({ selectedNode, onUpdateNode, onClose, projectId, flowId }) {
   const [showVisualizeModal, setShowVisualizeModal] = useState(false);
   const [selectedWidgetType, setSelectedWidgetType] = useState('');
+  const [selectedDashboard, setSelectedDashboard] = useState('');
+  const [dashboards, setDashboards] = useState([]);
   const [isCreatingWidget, setIsCreatingWidget] = useState(false);
+  const [isLoadingDashboards, setIsLoadingDashboards] = useState(false);
 
   // State to hold available variables for device nodes
   const [deviceVariables, setDeviceVariables] = useState([]);
@@ -81,65 +86,86 @@ function PropertiesPanel({ selectedNode, onUpdateNode, onClose, projectId }) {
     };
   }, [selectedNode]);
 
+  const loadDashboards = useCallback(async () => {
+    try {
+      setIsLoadingDashboards(true);
+      const response = await dashboardAPI.getTemplates({ project: projectId });
+      
+      const dashboards = response.data.results || response.data.templates || [];
+      setDashboards(dashboards);
+      
+      // Auto-select first dashboard if available
+      if (dashboards.length > 0) {
+        setSelectedDashboard(dashboards[0].uuid);
+      }
+    } catch (error) {
+      console.error('Error loading dashboards:', error);
+      setDashboards([]);
+    } finally {
+      setIsLoadingDashboards(false);
+    }
+  }, [projectId]);
+
+  // Load available dashboards when modal opens
+  useEffect(() => {
+    if (showVisualizeModal && projectId) {
+      loadDashboards();
+    }
+  }, [showVisualizeModal, projectId, loadDashboards]);
+
   // After hooks – safely bail out on no selection
   if (!selectedNode) {
     return null;
   }
 
   const handleVisualizeOutput = async () => {
-    if (!selectedWidgetType || !projectId) return;
+    if (!selectedWidgetType || !flowId || !selectedDashboard) return;
 
     try {
       setIsCreatingWidget(true);
       
-      // Create a new widget based on this node's output
+      // Create widget configuration
       const widgetConfig = {
-        id: `widget-${Date.now()}`,
-        type: selectedWidgetType,
-        nodeId: selectedNode.id,
-        nodeName: selectedNode.data.label || selectedNode.data.nodeType,
-        title: `${selectedNode.data.label || selectedNode.data.nodeType} - ${widgetTypes.find(w => w.value === selectedWidgetType)?.label}`,
-        dataSource: {
-          type: 'flow_node',
-          nodeId: selectedNode.id,
-          flowId: 'current', // This would be the current flow ID
-        },
-        position: { x: 0, y: 0 },
-        size: { w: 6, h: 4 },
-        config: {
+        widget_type: selectedWidgetType,
+        dashboard_uuid: selectedDashboard,
+        widget_title: `${selectedNode.data.label || selectedNode.data.nodeType} - ${widgetTypes.find(w => w.value === selectedWidgetType)?.label}`,
+        node_name: selectedNode.data.label || selectedNode.data.nodeType,
+        // Include selected variable for device nodes
+        ...(selectedNode.data.category === 'device' && selectedNode.data.config?.variable && {
+          output_field: selectedNode.data.config.variable,
+          sensor_variable: selectedNode.data.config.variable
+        }),
+        widget_config: {
           autoRefresh: true,
-          refreshInterval: 30,
+          refreshInterval: 30000, // 30 seconds in milliseconds
+          showLegend: selectedWidgetType === 'time_series',
+          animation: selectedWidgetType !== 'table',
+          // Include variable info in config for device nodes
+          ...(selectedNode.data.category === 'device' && selectedNode.data.config?.variable && {
+            sensorVariable: selectedNode.data.config.variable
+          })
         }
       };
 
-      // Add widget to project's dashboard template
-      // This will create a new dashboard template if one doesn't exist
-      const dashboardData = {
-        name: `${selectedNode.data.label || selectedNode.data.nodeType} Dashboard`,
-        description: `Auto-generated dashboard for ${selectedNode.data.label || selectedNode.data.nodeType} node`,
-        widgets: [widgetConfig],
-        layout: [
-          {
-            i: widgetConfig.id,
-            x: 0,
-            y: 0,
-            w: 6,
-            h: 4
-          }
-        ]
-      };
-
-      // This would normally call the dashboard API to create/update a template
-      console.log('Creating widget:', widgetConfig);
-      console.log('Dashboard data:', dashboardData);
+      // Call the backend API to create widget from node
+      const response = await flowAPI.createWidgetFromNode(flowId, selectedNode.id, widgetConfig);
       
-      alert(`Widget created! A ${widgetTypes.find(w => w.value === selectedWidgetType)?.label} widget has been added to visualize the output of ${selectedNode.data.label || selectedNode.data.nodeType}.`);
+      console.log('🎉 Widget created successfully:', response.data);
+      console.log('🎯 Widget ID:', response.data.widget_id);
+      console.log('📊 Dashboard UUID:', response.data.dashboard_uuid);
+      console.log('📐 Layout entry:', response.data.layout_entry);
+      
+      // Show success message with dashboard name
+      const dashboard = dashboards.find(d => d.uuid === selectedDashboard);
+      alert(`Widget created successfully! A ${widgetTypes.find(w => w.value === selectedWidgetType)?.label} widget has been added to "${dashboard?.name || 'Selected Dashboard'}" to visualize the output of ${selectedNode.data.label || selectedNode.data.nodeType}.`);
       
       setShowVisualizeModal(false);
       setSelectedWidgetType('');
+      setSelectedDashboard('');
     } catch (error) {
       console.error('Error creating widget:', error);
-      alert('Failed to create widget. Please try again.');
+      const errorMessage = error.response?.data?.detail || error.response?.data?.error || 'Failed to create widget. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsCreatingWidget(false);
     }
@@ -376,16 +402,22 @@ function PropertiesPanel({ selectedNode, onUpdateNode, onClose, projectId }) {
           </div>
         </div>
 
-        {/* Visualize Output Section */}
-        {projectId && (
+        {/* Visualize Output Section - Only for output and device nodes */}
+        {projectId && (selectedNode.data.category === 'output' || selectedNode.data.category === 'device') && (
           <div className="property-section">
             <h4>Visualization</h4>
             <p className="section-description">
               Create a widget to visualize this node's output data
             </p>
+            {selectedNode.data.category === 'device' && !selectedNode.data.config?.variable && (
+              <div className="validation-warning">
+                ⚠️ Please select a variable first before creating visualization
+              </div>
+            )}
             <button 
               className="visualize-button"
               onClick={() => setShowVisualizeModal(true)}
+              disabled={selectedNode.data.category === 'device' && !selectedNode.data.config?.variable}
             >
               📊 Visualize Output
             </button>
@@ -410,7 +442,38 @@ function PropertiesPanel({ selectedNode, onUpdateNode, onClose, projectId }) {
               <p>
                 Create a widget to visualize the output from <strong>{selectedNode.data.label || selectedNode.data.nodeType}</strong>
               </p>
-              <div className="widget-types">
+              
+              {/* Dashboard Selection */}
+              <div className="form-section">
+                <label htmlFor="dashboard-select">Select Dashboard:</label>
+                {isLoadingDashboards ? (
+                  <p style={{ color: '#9ca3af', fontStyle: 'italic' }}>Loading dashboards...</p>
+                ) : dashboards.length > 0 ? (
+                  <select 
+                    id="dashboard-select"
+                    value={selectedDashboard} 
+                    onChange={(e) => setSelectedDashboard(e.target.value)}
+                    className="dashboard-select"
+                  >
+                    <option value="">Select a dashboard</option>
+                    {dashboards.map(dashboard => (
+                      <option key={dashboard.uuid} value={dashboard.uuid}>
+                        {dashboard.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="no-dashboards">
+                    <p>No dashboards found for this project.</p>
+                    <p className="text-small">Create a dashboard first to add widgets.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Widget Type Selection */}
+              <div className="form-section">
+                <label>Widget Type:</label>
+                <div className="widget-types">
                 {widgetTypes.map(widget => (
                   <div 
                     key={widget.value}
@@ -421,6 +484,7 @@ function PropertiesPanel({ selectedNode, onUpdateNode, onClose, projectId }) {
                     <p>{widget.description}</p>
                   </div>
                 ))}
+                </div>
               </div>
             </div>
             <div className="modal-footer">
@@ -434,7 +498,7 @@ function PropertiesPanel({ selectedNode, onUpdateNode, onClose, projectId }) {
               <button 
                 className="primary-button"
                 onClick={handleVisualizeOutput}
-                disabled={!selectedWidgetType || isCreatingWidget}
+                disabled={!selectedWidgetType || !selectedDashboard || isCreatingWidget || dashboards.length === 0}
               >
                 {isCreatingWidget ? 'Creating...' : 'Create Widget'}
               </button>

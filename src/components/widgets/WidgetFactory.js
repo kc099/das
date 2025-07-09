@@ -4,6 +4,7 @@ import BarChartWidget from './BarChartWidget';
 import GaugeWidget from './GaugeWidget';
 import StatPanelWidget from './StatPanelWidget';
 import PieChartWidget from './PieChartWidget';
+import { useDeviceWidgetData } from '../../hooks/useDeviceWidgetData';
 
 // Simple implementations for remaining widget types
 const TableWidget = ({ widget, data = [] }) => {
@@ -117,11 +118,15 @@ const TrendChartWidget = ({ widget, data = [] }) => {
   );
 };
 
-const WidgetFactory = ({ widget, data }) => {
+const WidgetFactory = ({ widget, data, dashboardUuid }) => {
+  // Live data (device widgets)
+  const { data: liveData } = useDeviceWidgetData(dashboardUuid, widget);
+  const combinedData = (liveData && liveData.length > 0) ? liveData : data;
+
   const renderWidget = () => {
     const commonProps = {
       widget: { ...widget, 'data-widget-type': widget.type },
-      data
+      data: combinedData
     };
 
     switch (widget.type) {

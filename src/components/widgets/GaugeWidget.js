@@ -2,9 +2,28 @@ import React from 'react';
 import './Widgets.css';
 
 const GaugeWidget = ({ widget, data = {} }) => {
-  // Sample data if no real data provided
+  // Check if this widget has a dataSource configured (from flow editor)
+  const hasDataSource = widget.dataSource && widget.dataSource.type;
+  
+  // Sample data if no real data provided AND no dataSource configured
   const sampleData = { value: 75, max: 100, unit: '%', label: 'CPU Usage' };
-  const gaugeData = Object.keys(data).length > 0 ? data : sampleData;
+  
+  // Determine what data to show
+  let gaugeData;
+  let showLoadingState = false;
+  
+  if (hasDataSource) {
+    // Widget has a dataSource - either show real data or loading state
+    if (Object.keys(data).length > 0) {
+      gaugeData = data;
+    } else {
+      showLoadingState = true;
+      gaugeData = {}; // No sample data for dataSource widgets
+    }
+  } else {
+    // Widget has no dataSource - show real data or sample data
+    gaugeData = Object.keys(data).length > 0 ? data : sampleData;
+  }
   
   const { value = 0, max = 100, unit = '', label = 'Value' } = gaugeData;
   const percentage = Math.min((value / max) * 100, 100);
@@ -32,7 +51,22 @@ const GaugeWidget = ({ widget, data = {} }) => {
         </div>
       </div>
       <div className="widget-content">
-        <div className="gauge-container">
+        {showLoadingState ? (
+          <div className="widget-loading-state" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            color: '#9ca3af',
+            textAlign: 'center',
+            fontSize: '0.9rem'
+          }}>
+            <p style={{ margin: 0, fontStyle: 'italic' }}>
+              Connecting to {widget.dataSource?.nodeName || 'flow node'}...
+            </p>
+          </div>
+        ) : (
+          <div className="gauge-container">
           <svg width="200" height="120" viewBox="0 0 200 120" className="gauge-svg">
             {/* Background arc */}
             <path
@@ -80,6 +114,7 @@ const GaugeWidget = ({ widget, data = {} }) => {
             <span>{max}</span>
           </div>
         </div>
+        )}
       </div>
       {widget.query && (
         <div className="widget-footer">
