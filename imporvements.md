@@ -8,6 +8,13 @@ To test MQTT edit username, pwd and ACL rules.
 
 Webhooks in blynk IoT on;y fetches data from a url without publisin to it. 
 
+Immediate Priorities (3-6 months):
+
+Industry-Specific Templates: Pre-built flows for common use cases (OEE calculation, predictive maintenance, energy monitoring)
+Mobile App: Operators need mobile dashboards and alerts
+Edge Computing: Add offline-first capabilities for unreliable industrial networks
+Advanced Security: Industrial-grade encryption, role-based access, audit logs
+
 Based on my analysis of the flow editor image and both codebases, here's a comprehensive implementation
   plan for flow execution:
 
