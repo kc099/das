@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useDashboardStats } from '../../hooks/useDashboardStats';
+import { useOverviewStats } from '../../hooks/useOverviewStats';
 
 const DashboardSidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
-  const { stats: overviewStats, loading } = useDashboardStats();
+  const { data: overviewStats, isLoading: loading } = useOverviewStats();
 
   const isCurrentPage = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -29,7 +29,7 @@ const DashboardSidebar = ({ isOpen, onClose }) => {
               <div className="sidebar-stat-content">
                 <div className="sidebar-stat-label">Organizations</div>
                 <div className="sidebar-stat-value">
-                  {loading ? '...' : overviewStats.organizations}
+                  {loading ? '...' : overviewStats?.organizations ?? 0}
                 </div>
               </div>
             </Link>
@@ -43,7 +43,7 @@ const DashboardSidebar = ({ isOpen, onClose }) => {
               <div className="sidebar-stat-content">
                 <div className="sidebar-stat-label">Projects</div>
                 <div className="sidebar-stat-value">
-                  {loading ? '...' : overviewStats.projects}
+                  {loading ? '...' : overviewStats?.projects ?? 0}
                 </div>
               </div>
             </Link>
@@ -57,7 +57,7 @@ const DashboardSidebar = ({ isOpen, onClose }) => {
               <div className="sidebar-stat-content">
                 <div className="sidebar-stat-label">MQTT Clusters</div>
                 <div className="sidebar-stat-value">
-                  {loading ? '...' : overviewStats.mqttClusters}
+                  {loading ? '...' : overviewStats?.mqttClusters ?? 0}
                 </div>
               </div>
             </Link>
@@ -71,7 +71,7 @@ const DashboardSidebar = ({ isOpen, onClose }) => {
               <div className="sidebar-stat-content">
                 <div className="sidebar-stat-label">Connected Devices</div>
                 <div className="sidebar-stat-value">
-                  {loading ? '...' : overviewStats.connectedDevices}
+                  {loading ? '...' : overviewStats?.connectedDevices ?? 0}
                 </div>
               </div>
             </Link>

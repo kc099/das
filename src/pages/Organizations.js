@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { authAPI, organizationAPI } from '../services/api';
 import DashboardHeader from '../components/common/DashboardHeader';
 import DashboardSidebar from '../components/common/DashboardSidebar';
@@ -10,9 +11,10 @@ import '../styles/OrganizationsPage.css';
 import '../styles/BaseLayout.css';
 import '../styles/OrganizationsPage.css';
 import useDashboardStore from '../store/dashboardStore';
-import { useStatActions } from '../hooks/useDashboardStats';
+
 
 function Organizations() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [organizations, setOrganizations] = useState([]);
@@ -32,7 +34,7 @@ function Organizations() {
     email: '',
     role: 'user'
   });
-  const { incrementStat, decrementStat, refresh: refreshStats } = useStatActions();
+  
 
   useEffect(() => {
     const initializeOrganizations = async () => {
@@ -90,8 +92,8 @@ function Organizations() {
         setOrganizations([...organizations, response.data.organization]);
         setShowCreateModal(false);
         setFormData({ name: '', description: '' });
-        incrementStat('organizations');
-        refreshStats();
+        queryClient.invalidateQueries(['overviewStats']);
+        
       }
     } catch (error) {
       console.error('Error creating organization:', error);
@@ -127,8 +129,8 @@ function Organizations() {
     try {
       await organizationAPI.deleteOrganization(orgId);
       setOrganizations(organizations.filter(org => org.id !== orgId));
-      decrementStat('organizations');
-      refreshStats();
+      queryClient.invalidateQueries(['overviewStats']);
+      
     } catch (error) {
       console.error('Error deleting organization:', error);
       alert('Failed to delete organization. Please try again.');

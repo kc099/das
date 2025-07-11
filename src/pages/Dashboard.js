@@ -5,7 +5,7 @@ import cacheService from '../services/cache';
 import DashboardHeader from '../components/common/DashboardHeader';
 import DashboardSidebar from '../components/common/DashboardSidebar';
 import { useAuth } from '../hooks/useAuth';
-import { useStatActions } from '../hooks/useDashboardStats';
+
 import useDashboardStore from '../store/dashboardStore';
 import '../styles/Dashboard.css';
 import '../styles/BaseLayout.css';
@@ -25,7 +25,7 @@ function Dashboard() {
     organization_id: '',
     tags: []
   });
-  const { incrementStat, refresh: refreshStats } = useStatActions();
+  
 
   useEffect(() => {
     const initializeDashboard = async () => {
@@ -98,8 +98,7 @@ function Dashboard() {
           organization_id: organizations[0]?.id || '',
           tags: []
         });
-        incrementStat('projects');
-        refreshStats();
+        
         navigate(`/project/${response.data.project.uuid}`);
       }
     } catch (error) {

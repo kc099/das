@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { projectAPI, flowAPI, dashboardAPI, deviceAPI } from '../services/api';
 import DashboardHeader from '../components/common/DashboardHeader';
@@ -8,10 +9,11 @@ import DashboardSidebar from '../components/common/DashboardSidebar';
 import '../styles/BaseLayout.css';
 import '../styles/ProjectDashboard.css';
 import useDashboardStore from '../store/dashboardStore';
-import { useStatActions } from '../hooks/useDashboardStats';
+
 
 function ProjectDashboard() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { projectUuid } = useParams();
   const [project, setProject] = useState(null);
   const [user, setUser] = useState(null);
@@ -25,7 +27,7 @@ function ProjectDashboard() {
   const [showAssignDeviceModal, setShowAssignDeviceModal] = useState(false);
   const [selectedDevices, setSelectedDevices] = useState([]);
   const { sidebarOpen, setSidebarOpen, toggleSidebar } = useDashboardStore();
-  const { decrementStat, refresh: refreshStats } = useStatActions();
+  
 
   const loadProjectDevices = useCallback(async () => {
     try {
@@ -184,8 +186,8 @@ function ProjectDashboard() {
       try {
         await projectAPI.deleteProject(projectUuid);
         alert('Project deleted successfully');
-        decrementStat('projects');
-        refreshStats();
+        queryClient.invalidateQueries(['overviewStats']);
+        
         navigate('/dashboard');
       } catch (error) {
         console.error('Error deleting project:', error);

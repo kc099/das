@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { authAPI, mqttAPI } from '../services/api';
 import DashboardHeader from '../components/common/DashboardHeader';
@@ -10,9 +11,10 @@ import '../styles/MqttPage.css';
 import '../styles/BaseLayout.css';
 import '../styles/MqttPage.css';
 import useDashboardStore from '../store/dashboardStore';
-import { useStatActions } from '../hooks/useDashboardStats';
+
 
 function MqttClustersPage() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [clusters, setClusters] = useState([]);
@@ -22,7 +24,7 @@ function MqttClustersPage() {
   const { sidebarOpen, setSidebarOpen, toggleSidebar } = useDashboardStore();
   const [createForm, setCreateForm] = useState({ name: '', host: '', port: 1883, username: '', password: '' });
   const [credentialsForm, setCredentialsForm] = useState({ username: '', password: '' });
-  const { incrementStat, decrementStat, refresh: refreshStats } = useStatActions();
+  
 
   // Wrap loadData in useCallback so that its reference is stable across
   // renders. This prevents useEffect below from triggering on every render
@@ -103,9 +105,9 @@ function MqttClustersPage() {
       
       // Reload clusters directly
       loadData();
+      queryClient.invalidateQueries(['overviewStats']);
       
-      incrementStat('mqttClusters');
-      refreshStats();
+      
       
       // Reset form and close modal
       setCreateForm({ name: '', host: '', port: 1883, username: '', password: '' });
@@ -129,9 +131,9 @@ function MqttClustersPage() {
       
       // Reload clusters to show the newly created hosted cluster
       loadData();
+      queryClient.invalidateQueries(['overviewStats']);
       
-      incrementStat('mqttClusters');
-      refreshStats();
+      
       
       // Reset form and close modal
       setCredentialsForm({ username: '', password: '' });
@@ -434,9 +436,9 @@ function MqttClustersPage() {
                               
                               // Reload clusters directly
                               loadData();
+                              queryClient.invalidateQueries(['overviewStats']);
                               
-                              decrementStat('mqttClusters');
-                              refreshStats();
+                              
                               
                               alert('Cluster deleted successfully');
                             } catch (err) {

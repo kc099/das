@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { authAPI, deviceAPI, organizationAPI } from '../services/api';
 import cacheService from '../services/cache';
 import DashboardHeader from '../components/common/DashboardHeader';
@@ -11,9 +12,10 @@ import '../styles/DevicesPage.css';
 import '../styles/BaseLayout.css';
 import '../styles/DevicesPage.css';
 import useDashboardStore from '../store/dashboardStore';
-import { useStatActions } from '../hooks/useDashboardStats';
+
 
 function Devices() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [devices, setDevices] = useState([]);
@@ -33,7 +35,7 @@ function Devices() {
   const [createdDevice, setCreatedDevice] = useState(null);
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [availableProjects, setAvailableProjects] = useState([]);
-  const { incrementStat, decrementStat, refresh: refreshStats } = useStatActions();
+  
   const [latestReadings, setLatestReadings] = useState({});
 
   useEffect(() => {
@@ -168,8 +170,8 @@ function Devices() {
         setSelectedProjects([]);
         await loadDevices();
         cacheService.invalidate('devices');
-        incrementStat('connectedDevices');
-        refreshStats();
+        queryClient.invalidateQueries(['overviewStats']);
+        
       }
     } catch (error) {
       console.error('Error creating device:', error);
@@ -186,8 +188,8 @@ function Devices() {
       await deviceAPI.deleteDevice(deviceUuid);
       await loadDevices();
       cacheService.invalidate('devices');
-      decrementStat('connectedDevices');
-      refreshStats();
+      queryClient.invalidateQueries(['overviewStats']);
+      
     } catch (error) {
       console.error('Error deleting device:', error);
       alert('Failed to delete device. Please try again.');
