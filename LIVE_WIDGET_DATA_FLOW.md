@@ -24,7 +24,7 @@ ESP32 / sensor → MQTT publish → `SensorDataConsumer` (WebSocket) → `Sensor
 
 ## 3. Short-term buffer (WidgetSample)
 
-`_handle_widget_tracking()` performs three jobs **for every incoming reading**:
+`_handle_widget_tracking()` performs three jobs **for every incoming reading** :
 
 1. `WidgetSample.objects.create(...)` – append the point.
 2. `_trim_samples()` – delete rows beyond the last 50.
