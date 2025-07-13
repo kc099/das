@@ -87,44 +87,25 @@ function Homepage() {
         <div className="hero-container">
           <div className="hero-content">
             <h1 className="hero-title">
-              Unleash Unlimited Scale for 
-              <span className="gradient-text"> IoT Developers</span>
+              The Operating System for<br />
+              <span className="gradient-text">Industrial IoT</span>
             </h1>
             <p className="hero-subtitle">
-              EdgeSync is a cloud-based IoT platform for Data and Device Management. 
-              Sync, Visualize, and Act on your data in real-time with autonomous workflows.
+A unified platform to connect legacy hardware, build visual data flows, <br /> and deploy powerful dashboards in days, not months.
             </p>
             <div className="hero-cta">
               <Link to="/signup" className="btn btn-primary btn-large">
-                Start Building Free
+                Signup Free
               </Link>
               <Link to="/login" className="btn btn-outline btn-large">
-                View Demo
+                Login 
               </Link>
             </div>
             <p className="hero-note">
               Save up to 70% of IoT design time • No credit card required
             </p>
           </div>
-          <div className="hero-visual">
-            <div className="hero-placeholder">
-              <div className="dashboard-mockup">
-                <div className="mockup-header">
-                  <div className="mockup-dots">
-                    <span></span><span></span><span></span>
-                  </div>
-                </div>
-                <div className="mockup-content">
-                  <div className="widget-grid">
-                    <div className="widget"></div>
-                    <div className="widget"></div>
-                    <div className="widget large"></div>
-                    <div className="widget"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          
         </div>
       </section>
 
@@ -226,10 +207,10 @@ function Homepage() {
             <p>Join thousands of developers building the future with EdgeSync</p>
             <div className="cta-buttons">
               <Link to="/signup" className="btn btn-primary btn-large">
-                Start Free Trial
+                Start Free 
               </Link>
               <Link to="/login" className="btn btn-outline btn-large">
-                Schedule Demo
+                Login
               </Link>
             </div>
           </div>

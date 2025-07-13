@@ -112,16 +112,18 @@
 .btn-outline:hover {
   background: var(--primary-color);
   color: white;
+  transform: translateY(-1px);
 }
 
 .btn-large {
-  padding: 16px 32px;
+  padding: 20px 40px;
   font-size: 18px;
+  min-width: 220px;
 }
 
 /* Hero Section */
 .hero {
-  padding: 100px 0 80px;
+  padding: 180px 0 160px;
   margin-top: 80px;
   background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
   color: white;
@@ -129,17 +131,18 @@
 }
 
 .hero-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 24px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 80px;
   align-items: center;
+  text-align: center;
 }
 
 .hero-title {
-  font-size: 56px;
+  font-size: 64px;
   font-weight: 700;
   line-height: 1.1;
   margin-bottom: 24px;
@@ -153,7 +156,7 @@
 }
 
 .hero-subtitle {
-  font-size: 20px;
+  font-size: 24px;
   color: rgba(255, 255, 255, 0.9);
   margin-bottom: 40px;
   line-height: 1.5;
@@ -163,6 +166,7 @@
   display: flex;
   gap: 16px;
   margin-bottom: 24px;
+  justify-content: center;
 }
 
 .hero-note {
