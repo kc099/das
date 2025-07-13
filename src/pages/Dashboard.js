@@ -4,6 +4,7 @@ import { authAPI, projectAPI, organizationAPI } from '../services/api';
 import cacheService from '../services/cache';
 import DashboardHeader from '../components/common/DashboardHeader';
 import DashboardSidebar from '../components/common/DashboardSidebar';
+import LoadingLayout from '../components/common/LoadingLayout';
 import { useAuth } from '../hooks/useAuth';
 
 import useDashboardStore from '../store/dashboardStore';
@@ -108,27 +109,7 @@ function Dashboard() {
   };
 
   if (loading) {
-    return (
-      <div className="page-container">
-        <DashboardHeader 
-          user={user} 
-          subscriptionType="free"
-          onLogout={handleLogout}
-          onToggleSidebar={toggleSidebar}
-        />
-        <div className="layout">
-          <DashboardSidebar 
-            isOpen={sidebarOpen} 
-            onClose={() => setSidebarOpen(false)} 
-          />
-          <main className="main-content">
-            <div className="content-wrapper">
-              <p>Loading your projects...</p>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
+    return <LoadingLayout user={user} message="Loading your projects..." />;
   }
 
   if (!user) {
