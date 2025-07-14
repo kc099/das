@@ -126,6 +126,16 @@ function MqttDashboard() {
     loadAll();
   }, [searchParams, navigate]);
 
+  useEffect(() => {
+    if (showCredentialsModal && info) {
+      setCredentialsForm({
+        username: info.username || '',
+        password: '',
+        confirmPassword: ''
+      });
+    }
+  }, [showCredentialsModal, info]);
+
 
 
   const testConnection = async () => {
@@ -382,11 +392,11 @@ function MqttDashboard() {
               <div className="credential-info">
                 <div className="cred-item">
                   <span className="cred-label">Username:</span>
-                  <code className="cred-value">{info.username}</code>
+                  <code className="cred-value">{info.username || 'Not set'}</code>
                 </div>
                 <div className="cred-item">
                   <span className="cred-label">Password:</span>
-                  <span className="cred-value">{info.hasPassword ? '••••••••' : 'Not set'}</span>
+                  <code className="cred-value">{info.hasPassword ? '••••••••' : 'Not set'}</code>
                 </div>
                 <div className="cred-item">
                   <span className="cred-label">Connection Status:</span>
@@ -394,7 +404,13 @@ function MqttDashboard() {
                     {info.hasPassword ? 'Active' : 'Inactive'}
                   </span>
                 </div>
-                <button className="edit-btn" onClick={()=>setShowCredentialsModal(true)}>
+                <button className="edit-btn" onClick={() => {
+                  // Pre-populate username if it exists
+                  if (info.username) {
+                    setCredentialsForm(prev => ({ ...prev, username: info.username }));
+                  }
+                  setShowCredentialsModal(true);
+                }}>
                   {info.hasPassword ? 'Update Credentials' : 'Create Credentials'}
                 </button>
               </div>
@@ -508,26 +524,41 @@ function MqttDashboard() {
                 e.preventDefault();
                 const { username, password, confirmPassword } = credentialsForm;
 
-                if (password !== confirmPassword) {
-                  alert('Passwords do not match');
-                  return;
-                }
-
-                if (password.length < 8) {
-                  alert('Password must be at least 8 characters');
-                  return;
-                }
-
-                // Determine username to send
-                const finalUsername = info && info.username ? info.username : username.trim();
+                const finalUsername = username.trim();
 
                 if (!finalUsername || finalUsername.length < 3) {
                   alert('Username must be at least 3 characters');
                   return;
                 }
 
+                // For updates, password can be empty (means don't change password)
+                const isUpdate = info && info.hasPassword;
+                const isPasswordProvided = password && password.trim().length > 0;
+
+                if (isPasswordProvided) {
+                  if (password !== confirmPassword) {
+                    alert('Passwords do not match');
+                    return;
+                  }
+
+                  if (password.length < 8) {
+                    alert('Password must be at least 8 characters');
+                    return;
+                  }
+                } else if (!isUpdate) {
+                  // For new credentials, password is required
+                  alert('Password is required for new credentials');
+                  return;
+                }
+
                 try {
-                  await mqttAPI.setPassword({ username: finalUsername, password });
+                  // Only send password if it's provided
+                  const requestData = { username: finalUsername };
+                  if (isPasswordProvided) {
+                    requestData.password = password;
+                  }
+                  
+                  await mqttAPI.setPassword(requestData);
                   
                   // Refresh info and close modal
                   cacheService.refreshAfterAction('mqtt_credentials_updated');
@@ -542,39 +573,40 @@ function MqttDashboard() {
                   alert('Failed to update credentials: ' + (err.response?.data?.error || err.message));
                 }
               }}>
-                {/* Show username input only if not previously set */}
-                {(!info || !info.username) && (
-                  <div className="form-group">
-                    <label>Username</label>
-                    <input
-                      type="text"
-                      value={credentialsForm.username}
-                      onChange={e => setCredentialsForm({ ...credentialsForm, username: e.target.value })}
-                      required
-                      minLength="3"
-                      placeholder="Enter MQTT username"
-                    />
-                  </div>
-                )}
                 <div className="form-group">
-                  <label>New Password</label>
+                  <label>Username</label>
+                  <input
+                    type="text"
+                    value={credentialsForm.username}
+                    onChange={e => setCredentialsForm({ ...credentialsForm, username: e.target.value })}
+                    required
+                    minLength="3"
+                    placeholder="Enter MQTT username"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>
+                    {info && info.hasPassword ? 'New Password (optional)' : 'Password'} 
+                    {info && info.hasPassword && <small style={{color: '#666', fontWeight: 'normal'}}> - leave blank to keep current password</small>}
+                  </label>
                   <input 
                     type="password"
                     value={credentialsForm.password} 
                     onChange={e => setCredentialsForm({...credentialsForm, password: e.target.value})} 
-                    required
-                    placeholder="Enter new MQTT password"
+                    placeholder={info && info.hasPassword ? "Enter new password (optional)" : "Enter MQTT password (min 8 chars)"}
                     minLength="8"
                   />
                 </div>
                 <div className="form-group">
-                  <label>Confirm Password</label>
+                  <label>
+                    Confirm Password
+                    {info && info.hasPassword && <small style={{color: '#666', fontWeight: 'normal'}}> - only if changing password</small>}
+                  </label>
                   <input 
                     type="password"
                     value={credentialsForm.confirmPassword} 
                     onChange={e => setCredentialsForm({...credentialsForm, confirmPassword: e.target.value})} 
-                    required
-                    placeholder="Confirm new password"
+                    placeholder={info && info.hasPassword ? "Confirm new password (if changing)" : "Confirm password"}
                     minLength="8"
                   />
                 </div>
@@ -599,4 +631,5 @@ function MqttDashboard() {
   );
 }
 
-export default MqttDashboard; 
+export default MqttDashboard;
+ 
