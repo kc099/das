@@ -88,7 +88,7 @@ function Homepage() {
           <div className="hero-content">
             <h1 className="hero-title">
               The Operating System for<br />
-              <span className="gradient-text">Industrial IoT</span>
+              <span className="gradient-text">Smart Industries</span>
             </h1>
             <p className="hero-subtitle">
 A unified platform to connect legacy hardware, build visual data flows, <br /> and deploy powerful dashboards in days, not months.
