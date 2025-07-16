@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { dashboardAPI } from '../services/api/dashboard';
+import IoTEncryptionManager from '../utils/iotEncryption';
+
+// Create global encryption manager for device data
+const deviceEncryption = new IoTEncryptionManager();
 
 // Helper function to format timestamp for different widget types
 const formatTimestamp = (isoString, widgetType) => {
@@ -80,6 +84,9 @@ export const useDeviceWidgetData = (dashboardUuid, widget) => {
     // Open live WebSocket stream only when the widget belongs to a saved dashboard
     if (!dashboardUuid) return;
 
+    // Get access token from localStorage (consistent with other components)
+    const accessToken = localStorage.getItem('access_token');
+
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
 
     // Support proxying when the React dev server (port 3000) is separate from
@@ -95,7 +102,6 @@ export const useDeviceWidgetData = (dashboardUuid, widget) => {
       base = `${protocol}://${window.location.host}`;
     }
 
-    const accessToken = localStorage.getItem('access_token');
     // FIX: Remove extra slash before query parameter
     const wsUrl = `${base}/ws/widgets/${widget.id}${accessToken ? `?token=${encodeURIComponent(accessToken)}` : ''}`;
     
@@ -108,20 +114,25 @@ export const useDeviceWidgetData = (dashboardUuid, widget) => {
       console.log(`✅ Widget WebSocket connected: ${widget.id}`);
     };
     
-    wsRef.current.onmessage = (evt) => {
+    wsRef.current.onmessage = (event) => {
       try {
-        const rawPayload = JSON.parse(evt.data);
-        
+        const rawData = JSON.parse(event.data);
+        console.log('📥 Raw widget data received:', rawData);
+
+        // Decrypt sensor data if encrypted
+        const data = deviceEncryption.decryptSensorData(rawData);
+        console.log('🔓 Decrypted widget data:', data);
+
         // Transform the data for widget consumption
-        const transformedPayload = transformWidgetData(rawPayload, widget.type);
+        const transformedPayload = transformWidgetData(data, widget.type);
         
         setData((prev) => {
           // Keep only the last 50 points and add the new one
           const next = [...prev, transformedPayload].slice(-50);
           return next;
         });
-      } catch (e) {
-        console.warn('Failed to parse widget message:', e);
+      } catch (error) {
+        console.error('❌ Failed to process widget data:', error);
       }
     };
     
@@ -142,4 +153,4 @@ export const useDeviceWidgetData = (dashboardUuid, widget) => {
   }, [dashboardUuid, widget.id, widget.type]);
 
   return { data, loading, error };
-}; 
+};
