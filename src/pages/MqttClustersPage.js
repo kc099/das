@@ -407,6 +407,7 @@ function MqttClustersPage() {
                     <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem'}}>
                       <p style={{margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)'}}><strong>Host:</strong> {cluster.host}</p>
                       <p style={{margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)'}}><strong>Port:</strong> {cluster.port}</p>
+                      {cluster.username && (<p style={{margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)'}}><strong>Username:</strong> {cluster.username}</p>)}
                       {cluster.cluster_type === 'hosted' && (
                         <p style={{margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)'}}><strong>Plan:</strong> Serverless</p>
                       )}
