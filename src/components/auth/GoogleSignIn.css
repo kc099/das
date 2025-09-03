@@ -1,0 +1,69 @@
+.google-signin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  margin: 10px 0;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #3c4043;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.google-signin-btn:hover:not(:disabled) {
+  background-color: #f8f9fa;
+  border-color: #c6c8ca;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.google-signin-btn:active:not(:disabled) {
+  background-color: #f1f3f4;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.google-signin-btn:disabled {
+  background-color: #f8f9fa;
+  color: #9aa0a6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.google-signin-btn.loading {
+  color: #9aa0a6;
+}
+
+.google-icon {
+  flex-shrink: 0;
+}
+
+.google-signin-divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.google-signin-divider::before,
+.google-signin-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: #e0e0e0;
+}
+
+.google-signin-divider::before {
+  margin-right: 15px;
+}
+
+.google-signin-divider::after {
+  margin-left: 15px;
+}

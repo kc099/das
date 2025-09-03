@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { organizationAPI, projectAPI, mqttAPI } from '../../services/api';
 import cacheService from '../../services/cache';
 
 const DashboardHeader = ({ user, subscriptionType, onLogout, onToggleSidebar }) => {
-  const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const [overviewData, setOverviewData] = useState({
     organizations: 0,
@@ -73,6 +71,7 @@ const DashboardHeader = ({ user, subscriptionType, onLogout, onToggleSidebar }) 
     }
   }, [showDropdown]);
 
+  // eslint-disable-next-line no-unused-vars
   const handleDropdownItemClick = (action) => {
     setShowDropdown(false);
     if (action) action();

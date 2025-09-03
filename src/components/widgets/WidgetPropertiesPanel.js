@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { flowAPI } from '../../services/api/flow';
 import './WidgetPropertiesPanel.css';
 
@@ -12,12 +12,7 @@ const WidgetPropertiesPanel = ({ widget, onClose, onUpdate, projectUuid }) => {
   const [dataSourceStatus, setDataSourceStatus] = useState('checking');
   const [nodeOutputData, setNodeOutputData] = useState(null);
 
-  useEffect(() => {
-    // Check data source status when panel opens
-    checkDataSourceStatus();
-  }, [widget]);
-
-  const checkDataSourceStatus = async () => {
+  const checkDataSourceStatus = useCallback(async () => {
     if (!widget.dataSource || widget.dataSource.type !== 'flow_node') {
       setDataSourceStatus('no_source');
       return;
@@ -49,7 +44,12 @@ const WidgetPropertiesPanel = ({ widget, onClose, onUpdate, projectUuid }) => {
       console.error('Error checking data source status:', error);
       setDataSourceStatus('error');
     }
-  };
+  }, [widget.dataSource, widget.config]);
+
+  useEffect(() => {
+    // Check data source status when panel opens
+    checkDataSourceStatus();
+  }, [checkDataSourceStatus]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({

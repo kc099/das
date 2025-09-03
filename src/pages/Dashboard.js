@@ -5,7 +5,6 @@ import cacheService from '../services/cache';
 import DashboardHeader from '../components/common/DashboardHeader';
 import DashboardSidebar from '../components/common/DashboardSidebar';
 import LoadingLayout from '../components/common/LoadingLayout';
-import { useAuth } from '../hooks/useAuth';
 
 import useDashboardStore from '../store/dashboardStore';
 import '../styles/Dashboard.css';

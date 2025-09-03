@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import { encryptAuthData } from '../utils/encryption';
+import GoogleSignIn from '../components/auth/GoogleSignIn';
 import '../styles/Signup.css';
+import '../components/auth/GoogleSignIn.css';
 
 function Signup() {
   const [formData, setFormData] = useState({
@@ -111,6 +113,15 @@ function Signup() {
     }
   };
 
+  const handleGoogleSignInSuccess = (data) => {
+    // Redirect to dashboard after successful Google sign-in
+    navigate('/home');
+  };
+
+  const handleGoogleSignInError = (errorMessage) => {
+    setError(errorMessage);
+  };
+
   return (
     <div className="signup-container">
       <div className="signup-form">
@@ -137,6 +148,17 @@ function Signup() {
             {error}
           </div>
         )}
+
+        {/* Google Sign-In Section */}
+        <GoogleSignIn
+          onSuccess={handleGoogleSignInSuccess}
+          onError={handleGoogleSignInError}
+          disabled={loading || keyLoading}
+        />
+
+        <div className="google-signin-divider">
+          or sign up with email
+        </div>
         
         <form onSubmit={handleSubmit}>
           <div className="form-group">

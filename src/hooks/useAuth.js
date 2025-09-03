@@ -65,6 +65,23 @@ export const useAuthState = () => {
     }
   };
 
+  const googleSignIn = async (credential) => {
+    try {
+      const response = await authAPI.googleOAuth(credential);
+      if (response.data.status === 'success') {
+        setToken(response.data.token);
+        if (response.data.user) {
+          setUser(response.data.user);
+          setUserState(response.data.user);
+        }
+        setIsAuthenticated(true);
+        return response.data;
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await authAPI.logout();
@@ -83,6 +100,7 @@ export const useAuthState = () => {
     loading,
     login,
     signup,
+    googleSignIn,
     logout
   };
 };
