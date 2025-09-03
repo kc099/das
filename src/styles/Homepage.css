@@ -433,7 +433,7 @@
 .cta-content p {
   font-size: 20px;
   margin-bottom: 40px;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(247, 241, 241, 0.9);
 }
 
 .cta-buttons {
@@ -454,7 +454,7 @@
 
 /* Footer */
 .footer {
-  background: #1a1a1a;
+  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
   color: white;
   padding: 60px 0 40px;
 }
@@ -469,11 +469,11 @@
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 16px;
-  color: var(--primary-color);
+  color: white;
 }
 
 .footer-brand p {
-  color: #999;
+  color: white;
   line-height: 1.6;
 }
 
@@ -481,6 +481,7 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 40px;
+  color: white;
 }
 
 .footer-column h4 {
@@ -492,7 +493,7 @@
 
 .footer-column a {
   display: block;
-  color: #999;
+  color: white;
   text-decoration: none;
   margin-bottom: 12px;
   transition: color 0.2s;
