@@ -91,7 +91,7 @@ function Homepage() {
               <span className="gradient-text">Smart Factories</span>
             </h1>
             <p className="hero-subtitle">
-A unified platform to connect legacy hardware, build visual data flows, <br /> and deploy powerful dashboards in days, not months.
+A unified Edge Device management platform to connect legacy hardware, <br /> build visual data flows, and deploy powerful dashboards in days, not months.
             </p>
             <div className="hero-cta">
               <Link to="/signup" className="btn btn-primary btn-large">
@@ -204,7 +204,7 @@ A unified platform to connect legacy hardware, build visual data flows, <br /> a
         <div className="container">
           <div className="cta-content">
             <h2>Ready to Transform Your IoT Development?</h2>
-            <p>Join thousands of developers building the future with EdgeSync</p>
+            <p>Join the community of developers building the future with EdgeSync</p>
             <div className="cta-buttons">
               <Link to="/signup" className="btn btn-primary btn-large">
                 Start Free 
