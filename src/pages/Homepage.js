@@ -174,7 +174,7 @@ A unified Edge Device management platform to connect legacy hardware, <br /> bui
                   <span className="benefit-icon">📈</span>
                   <div>
                     <h4>Unlimited Scale</h4>
-                    <p>From prototype to millions of devices seamlessly</p>
+                    <p>From prototype to thousands of devices seamlessly</p>
                   </div>
                 </div>
               </div>
