@@ -68,7 +68,7 @@ function Homepage() {
     {
       step: "3",
       title: "Design Dashboards",
-      description: "Use EdgeBoard designer to create custom dashboards and workflows for device management."
+      description: "Use Flow Designer to create custom workflows on your devices and publish multiple dashboards."
     },
     {
       step: "4",
@@ -76,6 +76,20 @@ function Homepage() {
       description: "Launch your IoT solution and monitor device performance with real-time analytics."
     }
   ];
+
+  // const pricings = [
+  //   {
+  //     title: "Free Tier",
+  //     description: "Get started with 5 devices, 1 project, and basic features at no cost.",
+  //     icon: "🔧"
+  //   },
+  //   {
+  //     title: "Pay as You Go",
+  //     description: "Visualize device data with comprehensive dashboards and advanced SQL analytics capabilities.",
+  //     icon: "📊"
+  //   },
+
+  // ];
 
   return (
     <div className="homepage">
@@ -177,6 +191,13 @@ A unified Edge Device management platform to connect legacy hardware, <br /> bui
                     <p>From prototype to thousands of devices seamlessly</p>
                   </div>
                 </div>
+                <div className="benefit-item">
+                  <span className="benefit-icon">📈</span>
+                  <div>
+                    <h4>Supported Platforms</h4>
+                    <p>Arduino IDE, Esp-IDF, Python Clients</p>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="benefits-visual">
@@ -198,6 +219,26 @@ A unified Edge Device management platform to connect legacy hardware, <br /> bui
           </div>
         </div>
       </section>
+
+
+      {/* Pricing Section
+      <section id="pricing" className="pricing">
+        <div className="container">
+          <div className="section-header">
+            <h2>Pricing</h2>
+            <p>No Credit Card Required</p>
+          </div>
+          <div className="features-grid">
+            {pricings.map((pricing, index) => (
+              <div key={index} className="feature-card">
+                <div className="feature-icon">{pricing.icon}</div>
+                <h3>{pricing.title}</h3>
+                <p>{pricing.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section> */}
 
       {/* CTA Section */}
       <section className="final-cta">

@@ -452,6 +452,49 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* Pricing Section
+.pricing {
+  padding: 60px 0;
+  background: #fafbfc;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 40px;
+}
+
+.pricing-card {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.pricing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+.pricing-icon {
+  font-size: 48px;
+  margin-bottom: 24px;
+}
+
+.pricing-card h3 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #1a1a1a;
+}
+
+.pricing-card p {
+  color: #666;
+  line-height: 1.6;
+} */
+
+
 /* Footer */
 .footer {
   background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
