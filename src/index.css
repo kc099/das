@@ -4,16 +4,16 @@
   --header-height: 48px;
   
   /* Primary Theme Colors */
-  --primary-color: #22c55e;
-  --primary-hover: #16a34a;
-  --primary-light: #86efac;
+  --primary-color: #22c5a2;
+  --primary-hover: #16a397;
+  --primary-light: #2ba019;
   
   /* Gradient Colors */
-  --gradient-start: #10b981;
-  --gradient-end: #047857;
+  --gradient-start: #069acb;
+  --gradient-end: #115483;
   
   /* Secondary Colors */
-  --secondary-color: #059669;
+  --secondary-color: #280202;
   --secondary-hover: #047857;
   
   /* Text Colors */
