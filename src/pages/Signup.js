@@ -4,7 +4,7 @@ import { authAPI } from '../services/api';
 import { encryptAuthData } from '../utils/encryption';
 import GoogleSignIn from '../components/auth/GoogleSignIn';
 import '../styles/Signup.css';
-import '../components/auth/GoogleSignIn.css';
+import '../styles/GoogleSignIn.css';
 
 function Signup() {
   const [formData, setFormData] = useState({

@@ -1,5 +1,5 @@
 import React from 'react';
-import './Widgets.css';
+import '../../styles/Widgets.css';
 
 const GaugeWidget = ({ widget, data = {} }) => {
   // Check if this widget has a dataSource configured (from flow editor)

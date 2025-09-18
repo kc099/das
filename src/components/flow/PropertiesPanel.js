@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import './PropertiesPanel.css';
+import '../../styles/PropertiesPanel.css';
 import { flowAPI } from '../../services/api/flow';
 import { dashboardAPI } from '../../services/api/dashboard';
 

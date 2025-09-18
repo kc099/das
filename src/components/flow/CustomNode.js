@@ -2,7 +2,7 @@ import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import * as Icons from 'lucide-react';
 import { nodeCategories } from '../../data/nodeTypes';
-import './CustomNode.css';
+import '../../styles/CustomNode.css';
 
 function CustomNode({ data, selected }) {
   const getIcon = (iconName) => {

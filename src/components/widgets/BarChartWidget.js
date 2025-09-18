@@ -1,6 +1,6 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import './Widgets.css';
+import '../../styles/Widgets.css';
 
 const BarChartWidget = ({ widget, data = [] }) => {
   // Check if this widget has a dataSource configured (from flow editor)

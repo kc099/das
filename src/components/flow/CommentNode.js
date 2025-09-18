@@ -1,6 +1,6 @@
 import React from 'react';
 import { Handle, Position } from '@xyflow/react';
-import './CommentNode.css';
+import '../../styles/CommentNode.css';
 
 function CommentNode({ data, selected }) {
   const commentText = data.config?.text || 'Add your comment...';

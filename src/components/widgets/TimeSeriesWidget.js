@@ -1,6 +1,6 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import './Widgets.css';
+import '../../styles/Widgets.css';
 
 const TimeSeriesWidget = ({ widget, data = [] }) => {
   // Check if this widget has a dataSource configured (from flow editor)

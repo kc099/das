@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { flowAPI } from '../../services/api/flow';
-import './WidgetPropertiesPanel.css';
+import '../../styles/WidgetPropertiesPanel.css';
 
 const WidgetPropertiesPanel = ({ widget, onClose, onUpdate, projectUuid }) => {
   const [formData, setFormData] = useState({

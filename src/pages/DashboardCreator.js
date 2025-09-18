@@ -6,7 +6,7 @@ import { projectAPI, dashboardAPI } from '../services/api';
 import WidgetFactory from '../components/widgets/WidgetFactory';
 import WidgetPropertiesPanel from '../components/widgets/WidgetPropertiesPanel';
 import '../styles/DashboardCreator.css';
-import '../components/widgets/Widgets.css';
+import '../styles/Widgets.css';
 import GridLayout from 'react-grid-layout';
 import { WidthProvider } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';

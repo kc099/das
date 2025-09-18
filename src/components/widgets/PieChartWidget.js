@@ -1,6 +1,6 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import './Widgets.css';
+import '../../styles/Widgets.css';
 
 const PieChartWidget = ({ widget, data = [] }) => {
   // Check if this widget has a dataSource configured (from flow editor)

@@ -1,6 +1,6 @@
 import React from 'react';
 import BaseWidget from './BaseWidget';
-import './Widgets.css';
+import '../../styles/Widgets.css';
 
 const StatPanelContent = ({ data, showLoadingState, dataSource }) => {
   const sampleData = { 

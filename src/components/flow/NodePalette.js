@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as Icons from 'lucide-react';
-import './NodePalette.css';
+import '../../styles/NodePalette.css';
 
 function NodePalette({ categories, isCollapsed }) {
   // Initialize category expansion state based on provided categories
