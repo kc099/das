@@ -303,7 +303,7 @@ function FlowEditor() {
           >
             ☰
           </button>
-          <h1>Flow Editor</h1>
+          {/* <h1>Flow Editor</h1> */}
           {isEditingName ? (
             <input
               className="flow-name-input"
