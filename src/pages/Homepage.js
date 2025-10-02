@@ -102,10 +102,10 @@ function Homepage() {
           <div className="hero-content">
             <h1 className="hero-title">
               The Multitenant Platform for<br />
-              <span className="gradient-text">IoT Automation</span>
+              <span className="gradient-text">Edge Automation</span>
             </h1>
             <p className="hero-subtitle">
-A unified Edge Device management platform to connect legacy hardware, <br /> build visual data flows, and deploy powerful dashboards in days, not months.
+A unified IoT Device management platform to connect legacy hardware, <br /> build visual data flows, and deploy powerful dashboards in days, not months.
             </p>
             <div className="hero-cta">
               <Link to="/signup" className="btn btn-primary btn-large">

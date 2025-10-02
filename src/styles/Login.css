@@ -132,6 +132,11 @@
   text-align: center;
   box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
   animation: pulse 2s infinite;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .encryption-status.loading {
