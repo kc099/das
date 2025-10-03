@@ -15,137 +15,74 @@ Mobile App: Operators need mobile dashboards and alerts
 Edge Computing: Add offline-first capabilities for unreliable industrial networks
 Advanced Security: Industrial-grade encryption, role-based access, audit logs
 
-Based on my analysis of the flow editor image and both codebases, here's a comprehensive implementation
-  plan for flow execution:
-
-  Flow Execution Implementation Plan
-
-  Architecture Overview
-
-  The system needs a Node-Based Flow Execution Engine that can:
-  1. Process different node types (Input, Output, Function, Network, Storage, Device)
-  2. Handle real-time data streaming from IoT devices
-  3. Execute flows in background tasks
-  4. Provide real-time execution feedback
-
-  Core Components
-
-  1. Node Processor Architecture
-
-  Each node type needs specific processor classes:
-
-  # Django Backend: flows/processors/
-  base_processor.py       # Abstract base class
-  input_processors.py     # Button, Slider, Text, Number inputs
-  output_processors.py    # Digital, Analog, Display outputs  
-  function_processors.py  # Moving Average, Min/Max, Custom code
-  network_processors.py   # MQTT, HTTP, WebSocket handlers
-  storage_processors.py   # Database connectors
-  device_processors.py    # Device interaction handlers
-
-  2. Flow Orchestration Engine
-
-  # flows/engine/
-  flow_executor.py       # Main flow execution coordinator
-  node_scheduler.py      # Handles node execution order
-  data_pipeline.py       # Manages data flow between nodes
-  event_manager.py       # Handles triggers and events
-
-  3. Real-time Data Processing
-
-  # flows/realtime/
-  flow_websocket.py      # WebSocket handler for live execution
-  data_stream.py         # Real-time data streaming
-  execution_monitor.py   # Live execution status updates
-
-  Implementation Strategy
-
-  Phase 1: Core Node Processors
-
-  1. Input Processors - Handle UI inputs (buttons, sliders, text)
-  2. Device Processors - Read/write device variables via WebSocket
-  3. Function Processors - Data transformation (moving average, min/max)
-  4. Output Processors - Display results, trigger actions
-
-  Phase 2: Flow Engine
-
-  1. Dependency Resolution - Analyze node connections for execution order
-  2. Data Pipeline - Pass data between connected nodes
-  3. Event-Driven Execution - Trigger flows based on device data changes
-  4. Error Handling - Graceful failure recovery and debugging
-
-  Phase 3: Background Processing
-
-  1. Celery Integration - For long-running flows
-  2. Flow Scheduling - Periodic execution triggers
-  3. Resource Management - Prevent system overload
-
-  Phase 4: Advanced Features
-
-  1. Flow Templates - Pre-built common patterns
-  2. Conditional Logic - If/then/else flow control
-  3. Loop Handling - Iterative processing
-  4. Performance Optimization - Efficient execution
-
-  Technical Implementation Details
-
-  Node Function Structure
-
-  class NodeProcessor:
-      def __init__(self, node_config, flow_context):
-          self.config = node_config
-          self.context = flow_context
-
-      def execute(self, input_data):
-          # Process node-specific logic
-          return output_data
-
-      def validate(self):
-          # Validate node configuration
-          pass
-
-  Flow Execution Flow
-
-  1. Parse Flow JSON - Extract nodes and connections
-  2. Build Execution Graph - Determine execution order
-  3. Initialize Processors - Create processor instances
-  4. Execute Nodes - Process data through pipeline
-  5. Handle Outputs - Send results to displays/devices/storage
-
-  Real-time Integration
-
-  - WebSocket Listeners - Monitor device data changes
-  - Event Triggers - Start flows based on conditions
-  - Live Updates - Stream execution progress to frontend
-  - Error Propagation - Real-time error notifications
-
-  Database Schema Extensions
-
-  # Additional models needed:
-  FlowTrigger         # Event-based flow triggers
-  NodeConfiguration   # Node-specific settings
-  FlowVariable       # Flow-level variables
-  ExecutionLog       # Detailed execution history
-
-  Frontend Integration
-
-  - Execution Controls - Start/stop/pause flows
-  - Live Monitoring - Real-time execution visualization
-  - Debug Interface - Step-through debugging
-  - Error Display - Visual error indicators
-
-  This architecture leverages your existing Django infrastructure (WebSockets, device management, MQTT) while
-   adding the flow execution layer. The modular design allows implementing node types incrementally, starting
-   with the most critical ones shown in your flow editor.
-
-⏺ Update Todos
-  ⎿  ☒ Create comprehensive implementation plan for flow execution system
-     ☐ Design node processor architecture for different node types
-     ☐ Implement flow orchestration engine for executing connected nodes
-     ☐ Set up background task processing for long-running flows
-     ☐ Implement real-time flow triggers based on device data
-     ☐ Implement comprehensive error handling and flow debugging
-
-⏺ The implementation plan provides a structured approach to build a comprehensive flow execution system that
-  handles all the node types shown in your flow editor. The architecture leverages your existing Django
-  infrastructure while adding the necessary execution layer for real-time IoT data processing flows.
+// OPCODES (1 byte)
+enum Opcode {
+  // Control Flow (0x00-0x0F)
+  NOP           = 0x00,  // No operation
+  HALT          = 0x01,  // Stop execution
+  JUMP          = 0x02,  // Jump to instruction
+  JUMP_IF       = 0x03,  // Conditional jump
+  CALL          = 0x04,  // Call subroutine
+  RETURN        = 0x05,  // Return from subroutine
+  
+  // Digital I/O (0x10-0x1F)
+  READ_DI       = 0x10,  // Read digital input
+  WRITE_DO      = 0x11,  // Write digital output
+  READ_AI       = 0x12,  // Read analog input
+  WRITE_AO      = 0x13,  // Write analog output
+  
+  // Modbus (0x20-0x2F)
+  MODBUS_READ_HOLDING  = 0x20,
+  MODBUS_READ_INPUT    = 0x21,
+  MODBUS_WRITE_SINGLE  = 0x22,
+  MODBUS_WRITE_MULTI   = 0x23,
+  
+  // CAN Bus (0x30-0x3F)
+  CAN_SEND      = 0x30,
+  CAN_RECEIVE   = 0x31,
+  
+  // MQTT (0x40-0x4F)
+  MQTT_PUBLISH  = 0x40,
+  MQTT_SUBSCRIBE = 0x41,
+  
+  // Math Operations (0x50-0x5F)
+  ADD           = 0x50,
+  SUBTRACT      = 0x51,
+  MULTIPLY      = 0x52,
+  DIVIDE        = 0x53,
+  MODULO        = 0x54,
+  
+  // Logic Operations (0x60-0x6F)
+  AND           = 0x60,
+  OR            = 0x61,
+  NOT           = 0x62,
+  XOR           = 0x63,
+  
+  // Comparison (0x70-0x7F)
+  EQUAL         = 0x70,
+  NOT_EQUAL     = 0x71,
+  GREATER       = 0x72,
+  LESS          = 0x73,
+  GREATER_EQ    = 0x74,
+  LESS_EQ       = 0x75,
+  
+  // Data Manipulation (0x80-0x8F)
+  LOAD_CONST    = 0x80,  // Load constant to register
+  LOAD_REG      = 0x81,  // Load from register
+  STORE_REG     = 0x82,  // Store to register
+  COPY_REG      = 0x83,  // Copy register to register
+  
+  // Transform (0x90-0x9F)
+  MOVING_AVG    = 0x90,
+  RATE_LIMIT    = 0x91,
+  DEBOUNCE      = 0x92,
+  SCALE         = 0x93,
+  
+  // Timer/Delay (0xA0-0xAF)
+  TIMER_START   = 0xA0,
+  TIMER_STOP    = 0xA1,
+  DELAY         = 0xA2,
+  
+  // Extended (0xF0-0xFF)
+  EXTENDED      = 0xFF   // For future expansion
+};
