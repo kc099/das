@@ -13,7 +13,6 @@ import '@xyflow/react/dist/style.css';
 
 import NodePalette from '../components/flow/NodePalette';
 import CustomNode from '../components/flow/CustomNode';
-import CommentNode from '../components/flow/CommentNode';
 import PropertiesPanel from '../components/flow/PropertiesPanel';
 import { nodeCategories, flowMetadata } from '../data/nodeTypes';
 import { flowAPI } from '../services/api';
@@ -27,8 +26,6 @@ const nodeTypes = {
   network: CustomNode,
   storage: CustomNode,
   device: CustomNode,
-  comment: CommentNode,
-  debug: CustomNode
 };
 
 function FlowEditor() {
@@ -224,12 +221,6 @@ function FlowEditor() {
     }
   }, [reactFlowInstance, flowMeta, currentFlowId, navigate, projectUuid]);
 
-  const loadFlow = useCallback(() => {
-    // For now, redirect to flow selection/dashboard
-    // TODO: Implement flow selection modal
-    navigate('/home');
-  }, [navigate]);
-
   const clearFlow = useCallback(() => {
     if (window.confirm('Are you sure you want to clear the entire flow?')) {
       setNodes([]);
@@ -247,37 +238,6 @@ function FlowEditor() {
     }
   }, [setNodes, setEdges, navigate]);
 
-  const executeFlow = useCallback(async () => {
-    if (!currentFlowId) {
-      alert('Please save the flow first before executing');
-      return;
-    }
-
-    try {
-      const response = await flowAPI.executeFlow(currentFlowId);
-      alert(`Flow execution started: ${response.data.message}`);
-    } catch (error) {
-      console.error('Error executing flow:', error);
-      alert('Error executing flow: ' + (error.response?.data?.detail || error.message));
-    }
-  }, [currentFlowId]);
-
-  if (isLoading) {
-    return (
-      <div className="flow-editor">
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          height: '100vh',
-          color: '#9ca3af',
-          fontStyle: 'italic'
-        }}>
-          <p>Loading flow...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flow-editor">
@@ -330,14 +290,8 @@ function FlowEditor() {
           {saveStatus && <span className="save-status">{saveStatus}</span>}
         </div>
         <div className="flow-header-right">
-          <button onClick={loadFlow} className="btn btn-secondary">
-            Load
-          </button>
           <button onClick={saveFlow} className="btn btn-primary">
             Save
-          </button>
-          <button onClick={executeFlow} className="btn btn-success">
-            Execute
           </button>
           <button onClick={clearFlow} className="btn btn-danger">
             Clear

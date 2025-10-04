@@ -21,16 +21,6 @@ export const nodeCategories = {
           analog: { label: 'Analog Output', config: { value: 0, range: [0, 255] } },
           display: { label: 'Display', config: { text: '', format: 'text' } }
         }
-      },
-      comment: {
-        label: 'Comment',
-        icon: 'MessageSquare',
-        config: { text: 'Add your comment here...' }
-      },
-      debug: {
-        label: 'Debug',
-        icon: 'Bug',
-        config: { showTimestamp: true, showPayload: true }
       }
     }
   },
@@ -52,14 +42,6 @@ export const nodeCategories = {
         label: 'Maximum',
         icon: 'ChevronUp',
         config: { windowSize: 10, resetOnOutput: false }
-      },
-      customPython: {
-        label: 'Custom Python',
-        icon: 'Code',
-        config: { 
-          code: 'def process(msg):\n    # Your Python code here\n    return msg',
-          timeout: 5000
-        }
       }
     }
   },
