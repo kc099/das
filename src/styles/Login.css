@@ -110,10 +110,29 @@
   font-size: 0.9rem;
 }
 
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  border: 1px solid #c3e6cb;
+  font-size: 0.9rem;
+}
+
 .login-btn:disabled {
   background-color: #ccc;
   cursor: not-allowed;
   transform: none;
+}
+
+.secondary-btn {
+  background-color: #6c757d;
+  margin-top: 10px;
+}
+
+.secondary-btn:hover {
+  background-color: #5a6268;
 }
 
 .form-group input:disabled {

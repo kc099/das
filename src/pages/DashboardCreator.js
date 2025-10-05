@@ -159,8 +159,8 @@ function DashboardCreator() {
               datasources: Array.isArray(template.datasources) ? template.datasources : []
             };
             
-            console.log('✅ Processed template widgets:', processedTemplate.widgets.length);
-            console.log('✅ Processed template layout:', processedTemplate.layout.length);
+            // console.log('✅ Processed template widgets:', processedTemplate.widgets.length);
+            // console.log('✅ Processed template layout:', processedTemplate.layout.length);
             
             setCurrentTemplate(processedTemplate);
           }
@@ -260,7 +260,7 @@ function DashboardCreator() {
         }
       }
     } catch (error) {
-      console.error('Error saving template:', error);
+      // console.error('Error saving template:', error);
       alert('Failed to save dashboard template. Please try again.');
     } finally {
       setIsSaving(false);
@@ -463,8 +463,8 @@ function DashboardCreator() {
                     isResizable
                     isDraggable
                     onLayoutChange={(newLayout) => {
-                      console.log('🔄 Grid layout changed:', newLayout);
-                      console.log('📏 Current layout before change:', currentTemplate.layout);
+                      // console.log('🔄 Grid layout changed:', newLayout);
+                      // console.log('📏 Current layout before change:', currentTemplate.layout);
                       handleLayoutChange(newLayout);
                     }}
                     margin={[16, 16]}

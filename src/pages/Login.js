@@ -161,6 +161,9 @@ function Login() {
           </button>
         </form>
         <p className="signup-link">
+          <Link to="/forgot-password">Forgot Password?</Link>
+        </p>
+        <p className="signup-link">
           Don't have an account? <Link to="/signup">Sign up here</Link>
         </p>
       </div>

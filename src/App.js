@@ -4,6 +4,7 @@ import QueryProvider from './providers/QueryProvider';
 import Homepage from './pages/Homepage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Organizations from './pages/Organizations';
 import ProjectDashboard from './pages/ProjectDashboard';
@@ -23,6 +24,7 @@ function App() {
         <Route path="/" element={<Homepage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         
         {/* Dashboard now serves as project launcher */}
         <Route path="/dashboard" element={<Dashboard />} />

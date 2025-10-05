@@ -38,7 +38,6 @@ function FlowEditor() {
   const [selectedNode, setSelectedNode] = useState(null);
   const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
   const [currentFlowId, setCurrentFlowId] = useState(flowId);
-  const [isLoading, setIsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
@@ -46,10 +45,9 @@ function FlowEditor() {
 
   const loadFlowFromAPI = useCallback(async (id) => {
     try {
-      setIsLoading(true);
       const response = await flowAPI.getFlow(id);
       const flowData = response.data;
-      
+
       setNodes(flowData.nodes || []);
       setEdges(flowData.edges || []);
       setFlowMeta({
@@ -63,10 +61,8 @@ function FlowEditor() {
     } catch (error) {
       console.error('Error loading flow:', error);
       alert('Error loading flow: ' + (error.response?.data?.detail || error.message));
-    } finally {
-      setIsLoading(false);
     }
-  }, [setNodes, setEdges, setFlowMeta, setCurrentFlowId, setIsLoading]);
+  }, [setNodes, setEdges, setFlowMeta, setCurrentFlowId]);
 
   // Load flow on component mount or flowId change
   useEffect(() => {
