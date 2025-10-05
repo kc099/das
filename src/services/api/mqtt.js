@@ -9,7 +9,7 @@ export const mqttAPI = {
       const response = await apiClient.get('/api/mqtt/user-info/');
       return response;
     } catch (error) {
-      console.error('MQTT info error:', error); // Changed to console.error for better logging
+      // console.error('MQTT info error:', error); // Changed to console.error for better logging
       // The backend should ideally handle this, but as a fallback:
       return {
         data: {

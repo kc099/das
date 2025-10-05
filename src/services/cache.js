@@ -28,11 +28,9 @@ class CacheService {
   // Get from cache or fetch fresh data
   async get(key, fetchFunction) {
     if (this.isCacheValid(key)) {
-      console.log(`Cache hit for ${key}`);
       return this.cache.get(key);
     }
 
-    console.log(`Cache miss for ${key}, fetching fresh data`);
     try {
       const data = await fetchFunction();
       this.cache.set(key, data);
@@ -41,7 +39,6 @@ class CacheService {
     } catch (error) {
       // If fetch fails and we have stale cache, return it
       if (this.cache.has(key)) {
-        console.log(`Fetch failed for ${key}, returning stale cache`);
         return this.cache.get(key);
       }
       throw error;
@@ -52,14 +49,12 @@ class CacheService {
   invalidate(key) {
     this.cache.delete(key);
     this.cacheTimestamps.delete(key);
-    console.log(`Cache invalidated for ${key}`);
   }
 
   // Clear all cache
   clearAll() {
     this.cache.clear();
     this.cacheTimestamps.clear();
-    console.log('All cache cleared');
   }
 
   // Clear cache for a specific user (on logout)
@@ -177,7 +172,6 @@ class CacheService {
           connected: response.data.connected,
         };
       } catch (error) {
-        console.log('Could not load MQTT info:', error);
         // Return default values
         return {
           hasPassword: false,
@@ -304,7 +298,6 @@ class CacheService {
 
   // Preload cache in background
   async preloadCache() {
-    console.log('Preloading cache in background...');
     try {
       // Fire all requests but don't wait for them
       this.getProfile().catch(() => {});
@@ -315,7 +308,6 @@ class CacheService {
       this.getMqttInfo().catch(() => {});
       this.getMqttStats().catch(() => {});
     } catch (error) {
-      console.log('Background cache preload error:', error);
     }
   }
 
