@@ -1,26 +1,48 @@
 export const nodeCategories = {
-  common: {
-    label: 'Common',
-    color: '#6366f1',
+  input: {
+    label: 'Input Contacts',
+    color: '#3b82f6',
     nodes: {
-      input: {
-        label: 'Input',
-        icon: 'ArrowDown',
-        subtypes: {
-          button: { label: 'Button', config: { text: 'Click me' } },
-          slider: { label: 'Slider', config: { min: 0, max: 100, value: 50 } },
-          text: { label: 'Text Input', config: { placeholder: 'Enter text' } },
-          number: { label: 'Number Input', config: { min: 0, max: 1000, value: 0 } }
-        }
+      contact_no: {
+        label: 'NO Contact',
+        icon: 'Square',
+        config: { tag: 'I0.0', description: 'Normally Open Contact' }
       },
-      output: {
-        label: 'Output',
-        icon: 'ArrowUp',
-        subtypes: {
-          digital: { label: 'Digital Output', config: { state: false } },
-          analog: { label: 'Analog Output', config: { value: 0, range: [0, 255] } },
-          display: { label: 'Display', config: { text: '', format: 'text' } }
-        }
+      contact_nc: {
+        label: 'NC Contact',
+        icon: 'SquareSlash',
+        config: { tag: 'I0.1', description: 'Normally Closed Contact' }
+      },
+      rising_edge: {
+        label: 'Rising Edge',
+        icon: 'TrendingUp',
+        config: { tag: 'I0.2', description: 'Rising Edge Trigger' }
+      },
+      falling_edge: {
+        label: 'Falling Edge',
+        icon: 'TrendingDown',
+        config: { tag: 'I0.3', description: 'Falling Edge Trigger' }
+      }
+    }
+  },
+  output: {
+    label: 'Output Coils',
+    color: '#ef4444',
+    nodes: {
+      coil: {
+        label: 'Output Coil',
+        icon: 'Circle',
+        config: { tag: 'Q0.0', description: 'Output Coil' }
+      },
+      coil_set: {
+        label: 'Set Coil',
+        icon: 'CircleDot',
+        config: { tag: 'Q0.1', description: 'Set Coil (Latch)' }
+      },
+      coil_reset: {
+        label: 'Reset Coil',
+        icon: 'CircleOff',
+        config: { tag: 'Q0.2', description: 'Reset Coil (Unlatch)' }
       }
     }
   },
@@ -119,70 +141,8 @@ export const nodeCategories = {
 };
 
 export const defaultFlowData = {
-  nodes: [
-    {
-      id: '1',
-      type: 'input',
-      position: { x: 100, y: 100 },
-      data: {
-        category: 'common',
-        nodeType: 'input',
-        subtype: 'button',
-        label: 'Start Button',
-        config: { text: 'Start Process' }
-      }
-    },
-    {
-      id: '2',
-      type: 'function',
-      position: { x: 300, y: 100 },
-      data: {
-        category: 'function',
-        nodeType: 'movingAverage',
-        label: 'Moving Average',
-        config: { windowSize: 5, outputInterval: 1000 }
-      }
-    },
-    {
-      id: '3',
-      type: 'output',
-      position: { x: 500, y: 100 },
-      data: {
-        category: 'common',
-        nodeType: 'output',
-        subtype: 'display',
-        label: 'Display Output',
-        config: { text: '', format: 'number' }
-      }
-    },
-    {
-      id: '4',
-      type: 'comment',
-      position: { x: 200, y: 200 },
-      data: {
-        category: 'common',
-        nodeType: 'comment',
-        label: 'Info',
-        config: { text: 'This flow processes sensor data using a moving average filter to smooth out noise and fluctuations.' }
-      }
-    }
-  ],
-  edges: [
-    {
-      id: 'e1-2',
-      source: '1',
-      target: '2',
-      sourceHandle: 'output',
-      targetHandle: 'input'
-    },
-    {
-      id: 'e2-3',
-      source: '2',
-      target: '3',
-      sourceHandle: 'output',
-      targetHandle: 'input'
-    }
-  ]
+  nodes: [],
+  edges: []
 };
 
 export const flowMetadata = {
