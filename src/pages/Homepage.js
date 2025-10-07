@@ -105,7 +105,8 @@ function Homepage() {
               <span className="gradient-text">Industrial IoT</span>
             </h1>
             <p className="hero-subtitle">
-A unified IoT Device management platform to connect legacy hardware, <br /> build visual data flows, and deploy powerful dashboards in days, not months.
+{/* A unified IoT Device management platform to connect legacy hardware, <br /> build visual data flows, and deploy powerful dashboards in days, not months. */}
+The edge compute platform that automation engineers <br /> an actually deploy, monitor, and maintain without becoming IT specialists.
             </p>
             <div className="hero-cta">
               <Link to="/signup" className="btn btn-primary btn-large">
