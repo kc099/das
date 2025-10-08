@@ -20,14 +20,10 @@ import { nodeCategories, flowMetadata } from '../data/nodeTypes';
 import { flowAPI } from '../services/api';
 import { deviceAPI } from '../services/api/device';
 import {
-  calculateDropPosition,
   calculateDropPositionInRung,
-  getAllRungIndices,
   getNodesInRung,
   getRungYPosition,
-  snapToGrid,
   getRungIndexFromPosition,
-  generateRungConnections,
 } from '../utils/LadderLayoutManager';
 import '../styles/FlowEditor.css';
 
@@ -439,6 +435,10 @@ function FlowEditor() {
             preventScrolling={false}
             snapToGrid={true}
             snapGrid={[20, 20]}
+            nodesDraggable={true}
+            nodesConnectable={true}
+            elementsSelectable={true}
+            selectNodesOnDrag={false}
           >
             <Background color="#aaa" gap={16} />
 

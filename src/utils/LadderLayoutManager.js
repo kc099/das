@@ -111,15 +111,6 @@ export function getNodeXPosition(nodeData, positionInZone = 0) {
   return positions.FUNCTION_ZONE_START + (positionInZone * LADDER_CONFIG.NODE_SPACING);
 }
 
-/**
- * Snap position to grid
- */
-export function snapToGrid(position) {
-  return {
-    x: Math.round(position.x / LADDER_CONFIG.GRID_SIZE) * LADDER_CONFIG.GRID_SIZE,
-    y: Math.round(position.y / LADDER_CONFIG.GRID_SIZE) * LADDER_CONFIG.GRID_SIZE,
-  };
-}
 
 /**
  * Get nodes in a specific rung
@@ -165,96 +156,4 @@ export function calculateDropPositionInRung(rungIndex, nodeData, existingNodes) 
   return { x: xPosition, y: centeredY };
 }
 
-/**
- * Calculate optimal position for a new node dropped into a rung (legacy)
- */
-export function calculateDropPosition(dropPosition, nodeType, existingNodes) {
-  const rungIndex = getRungIndexFromPosition(dropPosition.y);
-  // Create a fake nodeData object for backward compatibility
-  const nodeData = { nodeType, category: 'unknown' };
-  return calculateDropPositionInRung(rungIndex, nodeData, existingNodes);
-}
 
-/**
- * Get all unique rung indices from nodes
- */
-export function getAllRungIndices(nodes) {
-  const indices = new Set();
-
-  nodes.forEach(node => {
-    const rungIndex = getRungIndexFromPosition(node.position.y);
-    indices.add(rungIndex);
-  });
-
-  return Array.from(indices).sort((a, b) => a - b);
-}
-
-/**
- * Generate automatic horizontal connections for nodes in a rung
- */
-export function generateRungConnections(rungNodes) {
-  const edges = [];
-
-  // Sort nodes left to right
-  const sortedNodes = [...rungNodes].sort((a, b) => a.position.x - b.position.x);
-
-  // Connect each node to the next one
-  for (let i = 0; i < sortedNodes.length - 1; i++) {
-    const sourceNode = sortedNodes[i];
-    const targetNode = sortedNodes[i + 1];
-
-    edges.push({
-      id: `e${sourceNode.id}-${targetNode.id}`,
-      source: sourceNode.id,
-      target: targetNode.id,
-      sourceHandle: 'output',
-      targetHandle: 'input',
-      type: 'default',
-    });
-  }
-
-  return edges;
-}
-
-/**
- * Validate ladder logic rules
- */
-export function validateLadderLogic(nodes) {
-  const errors = [];
-
-  // Check each rung
-  const rungIndices = getAllRungIndices(nodes);
-
-  rungIndices.forEach(rungIndex => {
-    const rungNodes = getNodesInRung(nodes, rungIndex);
-
-    if (rungNodes.length === 0) return;
-
-    // Check if rung has at least one input
-    const hasInput = rungNodes.some(n => isInputNode(n.data));
-
-    // Check if rung has at least one output
-    const hasOutput = rungNodes.some(n => isOutputNode(n.data));
-
-    if (!hasInput) {
-      errors.push(`Rung ${rungIndex}: Missing input contact`);
-    }
-
-    if (!hasOutput) {
-      errors.push(`Rung ${rungIndex}: Missing output coil`);
-    }
-  });
-
-  return errors;
-}
-
-/**
- * Create a new empty rung at the specified index
- */
-export function createNewRung(rungIndex) {
-  return {
-    id: `rung-${rungIndex}`,
-    index: rungIndex,
-    yPosition: getRungYPosition(rungIndex),
-  };
-}
