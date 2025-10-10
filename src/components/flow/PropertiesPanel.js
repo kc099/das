@@ -149,12 +149,7 @@ function PropertiesPanel({ selectedNode, onUpdateNode, onClose, projectId, flowI
 
       // Call the backend API to create widget from node
       const response = await flowAPI.createWidgetFromNode(flowId, selectedNode.id, widgetConfig);
-      
-      console.log('🎉 Widget created successfully:', response.data);
-      console.log('🎯 Widget ID:', response.data.widget_id);
-      console.log('📊 Dashboard UUID:', response.data.dashboard_uuid);
-      console.log('📐 Layout entry:', response.data.layout_entry);
-      
+
       // Show success message with dashboard name
       const dashboard = dashboards.find(d => d.uuid === selectedDashboard);
       alert(`Widget created successfully! A ${widgetTypes.find(w => w.value === selectedWidgetType)?.label} widget has been added to "${dashboard?.name || 'Selected Dashboard'}" to visualize the output of ${selectedNode.data.label || selectedNode.data.nodeType}.`);

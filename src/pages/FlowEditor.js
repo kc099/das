@@ -153,7 +153,6 @@ function FlowEditor() {
       }
 
       const parsedData = JSON.parse(nodeData);
-      const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
 
       // Calculate position in the flow canvas using screenToFlowPosition
       const position = reactFlowInstance.screenToFlowPosition({
