@@ -7,24 +7,17 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
-  Panel
+  Panel,
+  MiniMap
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import NodePalette from '../components/flow/NodePalette';
 import CustomNode from '../components/flow/CustomNode';
 import PropertiesPanel from '../components/flow/PropertiesPanel';
-import LadderRung from '../components/flow/LadderRung';
-import PowerRails from '../components/flow/PowerRails';
 import { nodeCategories, flowMetadata } from '../data/nodeTypes';
 import { flowAPI } from '../services/api';
 import { deviceAPI } from '../services/api/device';
-import {
-  calculateDropPositionInRung,
-  getNodesInRung,
-  getRungYPosition,
-  getRungIndexFromPosition,
-} from '../utils/LadderLayoutManager';
 import '../styles/FlowEditor.css';
 
 const nodeTypes = {
@@ -34,6 +27,17 @@ const nodeTypes = {
   network: CustomNode,
   storage: CustomNode,
   device: CustomNode,
+};
+
+// Edge styles for n8n-like appearance
+const edgeOptions = {
+  animated: true,
+  style: { stroke: '#94a3b8', strokeWidth: 2 },
+};
+
+const defaultEdgeOptions = {
+  type: 'smoothstep',
+  ...edgeOptions,
 };
 
 function FlowEditor() {
@@ -50,8 +54,6 @@ function FlowEditor() {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [isEditingName, setIsEditingName] = useState(false);
-  const [rungs, setRungs] = useState([0]); // Track manually created rungs
-  const [selectedRung, setSelectedRung] = useState(0); // Currently selected rung for dropping nodes
 
   const loadFlowFromAPI = useCallback(async (id) => {
     try {
@@ -131,88 +133,9 @@ function FlowEditor() {
   }, [projectUuid]);
 
   const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
+    (params) => setEdges((eds) => addEdge({ ...params, ...edgeOptions }, eds)),
     [setEdges]
   );
-
-  // Custom node change handler with snap-to-grid for ladder nodes
-  const handleNodesChange = useCallback((changes) => {
-    const snappedChanges = changes.map((change) => {
-      if (change.type === 'position' && change.dragging === false && change.position) {
-        // Find the node being changed
-        const node = nodes.find(n => n.id === change.id);
-        if (node && (node.data.category === 'input' || node.data.category === 'output' || node.data.category === 'function')) {
-          // Snap to ladder grid - CENTER the node on the rung
-          const NODE_HEIGHT = 28;
-          const rungIndex = getRungIndexFromPosition(change.position.y + (NODE_HEIGHT / 2)); // Add half node height to get center
-          const rungY = getRungYPosition(rungIndex);
-          const centeredY = rungY - (NODE_HEIGHT / 2);
-          return {
-            ...change,
-            position: { x: Math.round(change.position.x / 20) * 20, y: centeredY }
-          };
-        }
-      }
-      return change;
-    });
-    onNodesChange(snappedChanges);
-  }, [onNodesChange, nodes]);
-
-  // Disabled auto-generate connections - users will draw them manually
-  // useEffect(() => {
-  //   const rungIndices = getAllRungIndices(nodes);
-  //   const newEdges = [];
-  //
-  //   rungIndices.forEach(rungIndex => {
-  //     const rungNodes = getNodesInRung(nodes, rungIndex);
-  //     if (rungNodes.length > 1) {
-  //       const rungEdges = generateRungConnections(rungNodes);
-  //       newEdges.push(...rungEdges);
-  //     }
-  //   });
-  //
-  //   // Only update if connections changed
-  //   const existingEdgeIds = new Set(edges.map(e => e.id));
-  //   const newEdgeIds = new Set(newEdges.map(e => e.id));
-  //   const hasChanges = newEdges.length !== edges.length ||
-  //     [...newEdgeIds].some(id => !existingEdgeIds.has(id));
-  //
-  //   if (hasChanges) {
-  //     setEdges(newEdges);
-  //   }
-  // }, [nodes, edges, setEdges]);
-
-  // Add new rung
-  const addNewRung = useCallback(() => {
-    const maxRung = Math.max(...rungs, -1);
-    const newRungIndex = maxRung + 1;
-    setRungs([...rungs, newRungIndex]);
-    setSelectedRung(newRungIndex); // Auto-select new rung
-  }, [rungs]);
-
-  // Delete selected rung
-  const deleteSelectedRung = useCallback(() => {
-    if (rungs.length === 1) {
-      alert('Cannot delete the last rung!');
-      return;
-    }
-
-    if (window.confirm(`Delete rung ${selectedRung} and all its nodes?`)) {
-      // Remove nodes in this rung
-      const nodesToKeep = nodes.filter(node => {
-        const nodeRungIndex = getRungIndexFromPosition(node.position.y);
-        return nodeRungIndex !== selectedRung;
-      });
-      setNodes(nodesToKeep);
-
-      // Remove rung from list
-      const newRungs = rungs.filter(r => r !== selectedRung);
-      setRungs(newRungs);
-
-      // Select first available rung
-      setSelectedRung(newRungs[0]);
-    }
-  }, [selectedRung, rungs, nodes, setNodes]);
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();
@@ -225,14 +148,18 @@ function FlowEditor() {
 
       const nodeData = event.dataTransfer.getData('application/reactflow');
 
-      if (typeof nodeData === 'undefined' || !nodeData) {
+      if (typeof nodeData === 'undefined' || !nodeData || !reactFlowInstance) {
         return;
       }
 
       const parsedData = JSON.parse(nodeData);
+      const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
 
-      // ALWAYS use selected rung - pass complete node data for proper classification
-      const position = calculateDropPositionInRung(selectedRung, parsedData, nodes);
+      // Calculate position in the flow canvas using screenToFlowPosition
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
 
       const newNode = {
         id: `${parsedData.nodeType}-${Date.now()}`,
@@ -246,11 +173,15 @@ function FlowEditor() {
 
       setNodes((nds) => nds.concat(newNode));
     },
-    [selectedRung, setNodes, nodes]
+    [reactFlowInstance, setNodes]
   );
 
   const onNodeClick = useCallback((_event, node) => {
     setSelectedNode(node);
+  }, []);
+
+  const onPaneClick = useCallback(() => {
+    setSelectedNode(null);
   }, []);
 
   const handleUpdateNode = useCallback((updatedNode) => {
@@ -293,7 +224,7 @@ function FlowEditor() {
           navigate(`/flow-editor/${response.data.uuid}`, { replace: true });
         }
       }
-      
+
       setSaveStatus('Saved!');
       setTimeout(() => setSaveStatus(''), 2000);
     } catch (error) {
@@ -303,6 +234,40 @@ function FlowEditor() {
       alert('Error saving flow: ' + (error.response?.data?.detail || error.message));
     }
   }, [reactFlowInstance, flowMeta, currentFlowId, navigate, projectUuid]);
+
+  const loadFlow = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const flowData = JSON.parse(event.target.result);
+            setNodes(flowData.nodes || []);
+            setEdges(flowData.edges || []);
+            setFlowMeta({
+              name: flowData.name || 'Imported Flow',
+              description: flowData.description || '',
+              version: flowData.version || '1.0.0',
+              tags: flowData.tags || [],
+              metadata: flowData.metadata || {}
+            });
+          } catch (error) {
+            alert('Error loading flow file: ' + error.message);
+          }
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  }, [setNodes, setEdges]);
+
+  const executeFlow = useCallback(() => {
+    alert('Flow execution not yet implemented. This will trigger the flow logic on the backend.');
+  }, []);
 
   const clearFlow = useCallback(() => {
     if (window.confirm('Are you sure you want to clear the entire flow?')) {
@@ -320,7 +285,6 @@ function FlowEditor() {
       navigate('/flow-editor', { replace: true });
     }
   }, [setNodes, setEdges, navigate]);
-
 
   return (
     <div className="flow-editor">
@@ -346,7 +310,6 @@ function FlowEditor() {
           >
             ☰
           </button>
-          {/* <h1>Flow Editor</h1> */}
           {isEditingName ? (
             <input
               className="flow-name-input"
@@ -373,36 +336,16 @@ function FlowEditor() {
           {saveStatus && <span className="save-status">{saveStatus}</span>}
         </div>
         <div className="flow-header-right">
-          {/* Rung Controls in Header */}
-          <div className="header-rung-controls">
-            <select
-              value={selectedRung}
-              onChange={(e) => setSelectedRung(Number(e.target.value))}
-              className="header-rung-select"
-            >
-              {rungs.map((rungIndex) => (
-                <option key={rungIndex} value={rungIndex}>
-                  Rung {rungIndex}
-                </option>
-              ))}
-            </select>
-            <button onClick={addNewRung} className="btn btn-success btn-sm" title="Add New Rung">
-              + Rung
-            </button>
-            <button
-              onClick={deleteSelectedRung}
-              className="btn btn-danger btn-sm"
-              disabled={rungs.length === 1}
-              title="Delete Selected Rung"
-            >
-              Delete
-            </button>
-          </div>
-
-          <button onClick={saveFlow} className="btn btn-primary">
+          <button onClick={loadFlow} className="btn btn-secondary" title="Load Flow from File">
+            Load
+          </button>
+          <button onClick={saveFlow} className="btn btn-success" title="Save Flow">
             Save
           </button>
-          <button onClick={clearFlow} className="btn btn-danger">
+          <button onClick={executeFlow} className="btn btn-primary" title="Execute Flow">
+            Execute
+          </button>
+          <button onClick={clearFlow} className="btn btn-danger" title="Clear Flow">
             Clear
           </button>
         </div>
@@ -410,7 +353,7 @@ function FlowEditor() {
 
       <div className="flow-content">
         {/* Node Palette */}
-        <NodePalette 
+        <NodePalette
           categories={paletteCategories}
           isCollapsed={isPaletteCollapsed}
         />
@@ -420,66 +363,68 @@ function FlowEditor() {
           <ReactFlow
             nodes={nodes}
             edges={edges}
-            onNodesChange={handleNodesChange}
+            onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onInit={setReactFlowInstance}
             onDrop={onDrop}
             onDragOver={onDragOver}
             onNodeClick={onNodeClick}
+            onPaneClick={onPaneClick}
             nodeTypes={nodeTypes}
-            defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-            zoomOnScroll={false}
-            zoomOnPinch={false}
-            zoomOnDoubleClick={false}
-            preventScrolling={false}
+            defaultEdgeOptions={defaultEdgeOptions}
+            defaultViewport={{ x: 250, y: 100, zoom: 1 }}
+            minZoom={0.2}
+            maxZoom={4}
+            fitView
             snapToGrid={true}
-            snapGrid={[20, 20]}
+            snapGrid={[15, 15]}
             nodesDraggable={true}
             nodesConnectable={true}
             elementsSelectable={true}
             selectNodesOnDrag={false}
           >
-            <Background color="#aaa" gap={16} />
-
-            {/* Render Power Rails */}
-            <PowerRails rungs={rungs} />
-
-            {/* Render Ladder Rungs */}
-            {rungs.map((rungIndex) => {
-              const nodesInRung = getNodesInRung(nodes, rungIndex);
-              const isSelected = rungIndex === selectedRung;
-              return (
-                <LadderRung
-                  key={`rung-${rungIndex}`}
-                  rungIndex={rungIndex}
-                  yPosition={getRungYPosition(rungIndex)}
-                  nodeCount={nodesInRung.length}
-                  isActive={isSelected}
-                />
-              );
-            })}
+            <Background
+              color="#94a3b8"
+              gap={20}
+              size={1}
+              variant="dots"
+            />
+            <Controls />
+            <MiniMap
+              nodeColor={(node) => {
+                const category = nodeCategories[node.data.category];
+                return category?.color || '#6366f1';
+              }}
+              maskColor="rgba(0, 0, 0, 0.1)"
+              position="bottom-right"
+              style={{
+                width: 150,
+                height: 100,
+              }}
+            />
 
             <Panel position="top-right">
               <div className="flow-info">
                 <div>Nodes: {nodes.length}</div>
                 <div>Connections: {edges.length}</div>
-                <div>Rungs: {rungs.length}</div>
               </div>
             </Panel>
           </ReactFlow>
         </div>
 
-        {/* Properties Panel Container - Fixed width */}
-        <div className="properties-panel-container">
-          <PropertiesPanel
-            selectedNode={selectedNode}
-            onUpdateNode={handleUpdateNode}
-            onClose={() => setSelectedNode(null)}
-            projectId={projectUuid}
-            flowId={currentFlowId}
-          />
-        </div>
+        {/* Properties Panel Container - Only show when node is selected */}
+        {selectedNode && (
+          <div className="properties-panel-container">
+            <PropertiesPanel
+              selectedNode={selectedNode}
+              onUpdateNode={handleUpdateNode}
+              onClose={() => setSelectedNode(null)}
+              projectId={projectUuid}
+              flowId={currentFlowId}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

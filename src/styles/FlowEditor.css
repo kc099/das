@@ -3,7 +3,7 @@
   flex-direction: column;
   height: 100vh;
   background-color: #f8fafc;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Royota, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .flow-header {
@@ -31,9 +31,9 @@
 }
 
 .flow-name {
-  color: #64748b;
-  font-size: 0.875rem;
-  font-style: italic;
+  color: #1e293b;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 .palette-toggle {
@@ -56,46 +56,6 @@
   display: flex;
   gap: 0.5rem;
   align-items: center;
-}
-
-.header-rung-controls {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  margin-right: 1rem;
-  padding-right: 1rem;
-  border-right: 2px solid #e2e8f0;
-}
-
-.header-rung-select {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  background: white;
-  cursor: pointer;
-  min-width: 120px;
-}
-
-.header-rung-select:focus {
-  outline: none;
-  border-color: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
-}
-
-.btn-sm {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
-}
-
-.btn-success {
-  background-color: #22c55e;
-  color: white;
-}
-
-.btn-success:hover:not(:disabled) {
-  background-color: #16a34a;
 }
 
 .btn {
@@ -126,6 +86,15 @@
   background-color: #4b5563;
 }
 
+.btn-success {
+  background-color: #22c55e;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #16a34a;
+}
+
 .btn-danger {
   background-color: #ef4444;
   color: white;
@@ -152,17 +121,17 @@
 .flow-canvas {
   flex: 1;
   position: relative;
+  background-color: #f8fafc;
 }
-
-/* Remove CSS power rails - they'll be rendered in ReactFlow instead */
 
 .flow-info {
   background: white;
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   font-size: 0.75rem;
   color: #64748b;
+  border: 1px solid #e2e8f0;
 }
 
 .flow-info > div {
@@ -173,8 +142,7 @@
   margin-bottom: 0;
 }
 
-
-/* React Flow overrides */
+/* React Flow overrides for n8n-style appearance */
 .react-flow__node {
   font-family: inherit;
 }
@@ -182,30 +150,41 @@
 .react-flow__controls {
   bottom: 20px;
   left: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  overflow: hidden;
 }
 
 .react-flow__controls button {
   background: white;
-  border: 1px solid #e2e8f0;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
   color: #64748b;
+  padding: 0.5rem;
+}
+
+.react-flow__controls button:last-child {
+  border-bottom: none;
 }
 
 .react-flow__controls button:hover {
   background-color: #f8fafc;
-  border-color: #cbd5e1;
 }
 
 .react-flow__background {
   background-color: #f8fafc;
 }
 
+/* n8n-style smooth edges */
 .react-flow__edge-path {
-  stroke: #64748b;
+  stroke: #94a3b8;
   stroke-width: 2;
 }
 
 .react-flow__edge.selected .react-flow__edge-path {
   stroke: #3b82f6;
+  stroke-width: 3;
 }
 
 .react-flow__connectionline {
@@ -213,59 +192,59 @@
   stroke-width: 2;
 }
 
-/* Handle styles */
-.react-flow__handle {
-  width: 10px;
-  height: 10px;
-  border: 2px solid white;
-  box-shadow: 0 0 0 1px #cbd5e1;
+/* MiniMap styling */
+.react-flow__minimap {
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.react-flow__handle-left {
-  left: -5px;
-}
-
-.react-flow__handle-right {
-  right: -5px;
-}
-
-.react-flow__handle.react-flow__handle-type-target {
-  background-color: #10b981;
-}
-
-.react-flow__handle.react-flow__handle-type-source {
-  background-color: #f59e0b;
-}
-
-.back-to-dashboard {
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 14px;
+.back-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 4px;
+  font-weight: 500;
 }
 
-.back-to-dashboard:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
+.back-btn:hover {
+  background: #e2e8f0;
+  transform: translateX(-2px);
 }
 
 .save-status {
   margin-left: 10px;
-  padding: 4px 8px;
+  padding: 4px 12px;
   border-radius: 4px;
   font-size: 12px;
-  font-weight: bold;
+  font-weight: 600;
   background-color: #d4edda;
   color: #155724;
 }
 
+.flow-name-input {
+  margin-left: 0.5rem;
+  padding: 4px 8px;
+  font-size: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.flow-name-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Loading spinner */
 .loading-spinner {
   display: flex;
   flex-direction: column;
@@ -279,7 +258,7 @@
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid var(--primary-color);
+  border-top: 4px solid #3b82f6;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -289,159 +268,22 @@
   100% { transform: rotate(360deg); }
 }
 
-.btn.btn-success {
-  background-color: #28a745;
-  border: 1px solid #28a745;
-}
+/* Responsive design */
+@media (max-width: 768px) {
+  .flow-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
 
-.btn.btn-success:hover {
-  background-color: #218838;
-  border-color: #1e7e34;
-}
+  .flow-header-left,
+  .flow-header-right {
+    justify-content: space-between;
+  }
 
-.back-btn {
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  color: var(--text-primary);
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.back-btn:hover {
-  background: #e2e8f0;
-  transform: translateX(-2px);
-}
-
-.flow-name-input {
-  margin-left: 0.5rem;
-  padding: 2px 6px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-/* Rung Controls Panel */
-.rung-controls {
-  background: white;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 280px;
-  border: 2px solid #e2e8f0;
-}
-
-.rung-header {
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #e2e8f0;
-}
-
-.rung-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #1e293b;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.rung-selector {
-  margin-bottom: 0.75rem;
-}
-
-.rung-selector label {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #64748b;
-  margin-bottom: 0.375rem;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-}
-
-.rung-select {
-  width: 100%;
-  padding: 0.5rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #1e293b;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.rung-select:hover {
-  border-color: #22c55e;
-}
-
-.rung-select:focus {
-  outline: none;
-  border-color: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
-}
-
-.rung-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.rung-action-btn {
-  flex: 1;
-  padding: 0.625rem 0.75rem;
-  border: none;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-}
-
-.rung-action-btn.add-btn {
-  background: #22c55e;
-  color: white;
-}
-
-.rung-action-btn.add-btn:hover {
-  background: #16a34a;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
-}
-
-.rung-action-btn.delete-btn {
-  background: #ef4444;
-  color: white;
-}
-
-.rung-action-btn.delete-btn:hover:not(:disabled) {
-  background: #dc2626;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
-}
-
-.rung-action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.rung-info {
-  background: #f0fdf4;
-  border: 1px solid #22c55e;
-  border-radius: 0.375rem;
-  padding: 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #166534;
-  text-align: center;
+  .properties-panel-container {
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+  }
 }

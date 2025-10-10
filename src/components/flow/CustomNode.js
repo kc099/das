@@ -7,7 +7,7 @@ import '../../styles/CustomNode.css';
 function CustomNode({ data, selected }) {
   const getIcon = (iconName) => {
     const IconComponent = Icons[iconName];
-    return IconComponent ? <IconComponent size={12} /> : <Icons.Circle size={12} />;
+    return IconComponent ? <IconComponent size={14} /> : <Icons.Circle size={14} />;
   };
 
   const getCategoryInfo = () => {
@@ -24,85 +24,64 @@ function CustomNode({ data, selected }) {
   const { color, icon } = getCategoryInfo();
   const displayLabel = data.label || data.nodeType;
 
-  // Check if this is an input/output element
-  const isInput = data.category === 'input';
-  const isOutput = data.category === 'output';
-  const isContact = data.nodeType === 'contact_no' || data.nodeType === 'contact_nc';
-  const isCoil = data.nodeType === 'coil' || data.nodeType === 'coil_set' || data.nodeType === 'coil_reset';
-  const isEdge = data.nodeType === 'rising_edge' || data.nodeType === 'falling_edge';
+  // Determine configuration display
+  const getConfigDisplay = () => {
+    if (!data.config) return null;
 
-  // Determine if node should have input/output handles
-  const hasInput = data.nodeType !== 'input' || data.category !== 'common';
-  const hasOutput = data.nodeType !== 'output' || data.category !== 'common';
+    // For device nodes, show device name and variable
+    if (data.category === 'device') {
+      return data.config.variable || 'Select variable';
+    }
 
-  // Render input/output nodes (same style as function blocks)
-  if (isInput || isOutput) {
-    return (
-      <div
-        className={`custom-node-minimal ${selected ? 'selected' : ''}`}
-        style={{ backgroundColor: color }}
-      >
-        {!isInput && (
-          <Handle
-            type="target"
-            position={Position.Left}
-            id="input"
-            className="minimal-handle"
-          />
-        )}
+    // For input/output nodes, show tag
+    if (data.config.tag) {
+      return data.config.tag;
+    }
 
-        <div className="minimal-content">
-          <div className="minimal-icon">
-            {getIcon(icon)}
-          </div>
-          <span className="minimal-title">{data.config?.tag || displayLabel}</span>
-        </div>
+    // For function nodes, show first config value
+    const configValues = Object.values(data.config);
+    if (configValues.length > 0 && configValues[0]) {
+      return String(configValues[0]).substring(0, 20);
+    }
 
-        {!isOutput && (
-          <Handle
-            type="source"
-            position={Position.Right}
-            id="output"
-            className="minimal-handle"
-          />
-        )}
-      </div>
-    );
-  }
+    return null;
+  };
 
-  // Render standard node (for function blocks, etc.)
+  const configDisplay = getConfigDisplay();
+
   return (
     <div
-      className={`custom-node-minimal ${selected ? 'selected' : ''}`}
-      style={{ backgroundColor: color }}
+      className={`n8n-node ${selected ? 'selected' : ''}`}
+      style={{ '--node-color': color }}
     >
       {/* Input Handle */}
-      {hasInput && (
-        <Handle
-          type="target"
-          position={Position.Left}
-          id="input"
-          className="minimal-handle"
-        />
-      )}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="input"
+        className="n8n-handle"
+      />
 
-      {/* Node Content - Just icon and name */}
-      <div className="minimal-content">
-        <div className="minimal-icon">
+      {/* Node Content */}
+      <div className="n8n-node-content">
+        <div className="n8n-icon" style={{ backgroundColor: color }}>
           {getIcon(icon)}
         </div>
-        <span className="minimal-title">{displayLabel}</span>
+        <div className="n8n-text">
+          <div className="n8n-label">{displayLabel}</div>
+          {configDisplay && (
+            <div className="n8n-subtitle">{configDisplay}</div>
+          )}
+        </div>
       </div>
 
       {/* Output Handle */}
-      {hasOutput && (
-        <Handle
-          type="source"
-          position={Position.Right}
-          id="output"
-          className="minimal-handle"
-        />
-      )}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="output"
+        className="n8n-handle"
+      />
     </div>
   );
 }
