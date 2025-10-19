@@ -14,23 +14,75 @@ ESP32 / sensor → MQTT publish → `SensorDataConsumer` (WebSocket) → `Sensor
 3. Each reading is persisted to the `sensors_sensordata` table.
 4. The consumer then calls `_handle_widget_tracking()`.
 
-## 2. Tracked variables
+## 2. Tracked Variables (CRITICAL!)
 
-*When a user visualises a **device node** in Flow Editor → “Create Widget”*
+*When a user visualizes a **device node** in Flow Editor → "Visualize Output"*
 
-1. `create_widget_from_node` (in `flows/views.py`) saves a `TrackedVariable` row:
-   * `device_id`, `sensor_type`, `widget_id`, `dashboard_uuid`, `max_samples=50`.
-2. This row declares **which** variables should be buffered for the widget.
+### Frontend (PropertiesPanel.js)
+1. User selects a device node in the flow editor
+2. User selects a **variable** (sensor type) from dropdown - e.g., "temperature", "humidity"
+3. User clicks "Visualize Output" → selects widget type and dashboard
+4. Frontend calls: `POST /api/flows/{flowUuid}/nodes/{nodeId}/create-widget/`
+   - **CRITICAL**: Must include `sensor_variable` in request body
+   - Example: `{ sensor_variable: "humidity", widget_type: "time_series", ... }`
+
+### Backend (flows/views.py)
+1. `create_widget_from_node` endpoint receives the request
+2. Extracts `device_id` from `nodeId` (format: `{device_uuid}-{timestamp}`)
+3. Gets `sensor_type` from `request.data['sensor_variable']` **← PRIMARY SOURCE**
+4. Creates `TrackedVariable` entry:
+   ```python
+   TrackedVariable.objects.update_or_create(
+       device_id=device_uuid,      # e.g., "95b2524b-fa0e-4717-b4ba-9ae9aff3365d"
+       sensor_type=sensor_var,     # e.g., "humidity"
+       widget_id=widget_id,        # e.g., "flow-widget-20251019-080729-cb2f1d17"
+       defaults={
+           'dashboard_uuid': dashboard_uuid,
+           'max_samples': 50,
+       }
+   )
+   ```
+
+### Why TrackedVariable is Critical
+- Without `TrackedVariable`, the widget receives **NO DATA**
+- `_handle_widget_tracking()` looks up `TrackedVariable` to find which widgets need updates
+- If lookup fails, sensor data is stored but **not** sent to widgets
+- **Common mistake**: Frontend not sending `sensor_variable` → no TrackedVariable created → no data
+
+### Verification
+Check if TrackedVariable exists:
+```python
+from sensors.models import TrackedVariable
+tv = TrackedVariable.objects.filter(widget_id='your-widget-id').first()
+print(tv.device_id, tv.sensor_type)  # Should match device UUID and variable
+```
 
 ## 3. Short-term buffer (WidgetSample)
 
-`_handle_widget_tracking()` performs three jobs **for every incoming reading** :
+`_handle_widget_tracking()` in `SensorDataConsumer` performs three jobs **for every incoming reading**:
 
-1. `WidgetSample.objects.create(...)` – append the point.
-2. `_trim_samples()` – delete rows beyond the last 50.
-3. `channel_layer.group_send('widget_<widget_id>', …)` – push the point to browsers.
+1. **Lookup**: Finds all `TrackedVariable` entries matching `(device_id, sensor_type)`
+2. **Store**: `WidgetSample.objects.create(...)` – append the data point for each widget
+3. **Trim**: `_trim_samples()` – delete rows beyond the last 50 per widget
+4. **Broadcast**: `channel_layer.group_send('widget_<widget_id>', ...)` – push the point to browsers via WebSocket
+
+**Data Flow**:
+```
+Device sends: {device_id: "95b25...", sensor_type: "humidity", value: 50.21}
+    ↓
+SensorDataConsumer receives & saves to SensorData table
+    ↓
+_handle_widget_tracking() queries: TrackedVariable.objects.filter(device_id="95b25...", sensor_type="humidity")
+    ↓
+For each TrackedVariable found:
+    → Create WidgetSample(widget=tracked_var, value=50.21, ...)
+    → Trim old samples (keep last 50)
+    → Send WebSocket message to widget_{widget_id} channel
+```
 
 Result: at most **50 rows per widget** in `widget_samples`, regardless of device publish rate.
+
+**If no TrackedVariable found**: Data is saved to SensorData table but **NOT** propagated to any widgets!
 
 ## 4. Transport to the browser
 
@@ -60,16 +112,91 @@ Every sample has shape:
 Widgets linked to **internal flow nodes** continue to use `flowAPI.getNodeOutput*` endpoints. The new tracked-variable path is **only** for device-node widgets.
 
 ---
-### Table Summary
-| Stage | Component / Table | Purpose |
-|-------|-------------------|---------|
-| Ingestion | `SensorDataConsumer` | Receive & persist raw readings |
-| Buffer declaration | `TrackedVariable` | Which device+sensor feeds which widget |
-| Buffer storage | `WidgetSample` | Last 50 samples per widget |
-| Broadcast | Channels group `widget_<id>` | Push new samples live |
-| Rest API | `/samples/` endpoint | Initial fetch |
-| Front-end hook | `useDeviceWidgetData` | Fetch + subscribe |
-| Rendering | `WidgetFactory` → widgets | Display live data |
+
+## Troubleshooting
+
+### Widget shows "Connecting..." but no data
+
+**Symptoms**:
+- Widget WebSocket connects successfully
+- Old dashboards with widgets show data (50 samples)
+- New widget shows 0 samples and stays in loading state
+
+**Diagnosis**:
+```python
+# Check if TrackedVariable exists for the widget
+from sensors.models import TrackedVariable, WidgetSample
+
+tv = TrackedVariable.objects.filter(widget_id='your-widget-id').first()
+if not tv:
+    print("❌ No TrackedVariable found - this is the problem!")
+else:
+    print(f"✅ TrackedVariable exists: device={tv.device_id}, sensor={tv.sensor_type}")
+    sample_count = WidgetSample.objects.filter(widget=tv).count()
+    print(f"   Samples in buffer: {sample_count}")
+```
+
+**Root Causes**:
+1. Frontend didn't send `sensor_variable` in create-widget request
+2. User didn't select a variable from dropdown before clicking "Visualize Output"
+3. Backend failed to extract device_id from node_id
+4. Device doesn't exist in database
+5. **FIXED**: Backend relied on `node_data.category == 'device'` but flow nodes don't have this field set
+
+**Backend Fix Applied** (flows/views.py):
+The backend now uses a more reliable detection method - it attempts to extract the device UUID from the node_id format and checks if a Device exists, rather than relying on the `category` field:
+
+```python
+# Device node detection based on node_id structure and device existence
+parts = node_id.split('-')
+if len(parts) >= 5:  # UUID (5 parts) + timestamp
+    device_uuid = '-'.join(parts[:5])
+    try:
+        device = Device.objects.get(uuid=device_uuid)
+        # If device exists, create TrackedVariable
+        sensor_var = widget_config.get('sensor_variable') or ...
+        if sensor_var:
+            TrackedVariable.objects.update_or_create(...)
+    except Device.DoesNotExist:
+        pass  # Not a device node
+```
+
+**Manual Fix (if needed)**:
+```python
+# Manual fix: Create TrackedVariable
+from sensors.models import TrackedVariable, Device
+
+device_uuid = "95b2524b-fa0e-4717-b4ba-9ae9aff3365d"  # Extract from node_id
+sensor_type = "humidity"  # The variable user selected
+widget_id = "flow-widget-20251019-080729-cb2f1d17"  # From widget config
+dashboard_uuid = "462e41a4-4c65-4568-84e6-b1e1f8156595"  # From dashboard
+
+device = Device.objects.get(uuid=device_uuid)  # Verify device exists
+
+TrackedVariable.objects.create(
+    device_id=device_uuid,
+    sensor_type=sensor_type,
+    widget_id=widget_id,
+    dashboard_uuid=dashboard_uuid,
+    max_samples=50
+)
+```
+
+**Prevention**:
+1. Ensure PropertiesPanel.js includes `sensor_variable` in the API request payload
+2. Backend now auto-detects device nodes by checking if a Device exists with the extracted UUID
 
 ---
-_Updated: 2025-07-09_ 
+### Table Summary
+| Stage | Component / Table | Purpose | Critical Fields |
+|-------|-------------------|---------|----------------|
+| Ingestion | `SensorDataConsumer` | Receive & persist raw readings | device_id, sensor_type, value |
+| Buffer declaration | `TrackedVariable` | Which device+sensor feeds which widget | **device_id, sensor_type, widget_id** |
+| Buffer storage | `WidgetSample` | Last 50 samples per widget | widget (FK), timestamp, value |
+| Broadcast | Channels group `widget_<id>` | Push new samples live | widget_id |
+| Rest API | `/samples/` endpoint | Initial fetch | dashboard_uuid, widget_id |
+| Front-end hook | `useDeviceWidgetData` | Fetch + subscribe | dashboardUuid, widget.id |
+| Rendering | `WidgetFactory` → widgets | Display live data | widget.dataSource |
+
+---
+_Updated: 2025-10-19 - Added TrackedVariable troubleshooting and fixed device node detection logic_ 

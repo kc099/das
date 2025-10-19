@@ -5,7 +5,7 @@ import '../../styles/Widgets.css';
 const TimeSeriesWidget = ({ widget, data = [] }) => {
   // Check if this widget has a dataSource configured (from flow editor)
   const hasDataSource = widget.dataSource && widget.dataSource.type;
-  
+
   // Sample data if no real data provided AND no dataSource configured
   const sampleData = [
     { timestamp: '00:00', value: 20, temperature: 22 },
@@ -19,7 +19,7 @@ const TimeSeriesWidget = ({ widget, data = [] }) => {
   // Determine what data to show
   let chartData;
   let showLoadingState = false;
-  
+
   if (hasDataSource) {
     // Widget has a dataSource - either show real data or loading state
     if (data.length > 0) {

@@ -62,7 +62,7 @@ export const useDeviceWidgetData = (dashboardUuid, widget) => {
       try {
         const res = await dashboardAPI.getWidgetSamples(dashboardUuid, widget.id);
         if (!isMounted) return;
-        
+
         // Transform initial data to match widget format
         const rawData = res.data.data || [];
         const transformedData = rawData.map(item => transformWidgetData(item, widget.type));
@@ -104,12 +104,9 @@ export const useDeviceWidgetData = (dashboardUuid, widget) => {
 
     // FIX: Remove extra slash before query parameter
     const wsUrl = `${base}/ws/widgets/${widget.id}${accessToken ? `?token=${encodeURIComponent(accessToken)}` : ''}`;
-    
-    console.log(`🔌 Connecting to widget WebSocket: ${widget.id}`);
-    
+
     wsRef.current = new WebSocket(wsUrl);
-    
-    // Add connection state handlers for debugging
+
     wsRef.current.onopen = (evt) => {
       console.log(`✅ Widget WebSocket connected: ${widget.id}`);
     };
@@ -117,36 +114,32 @@ export const useDeviceWidgetData = (dashboardUuid, widget) => {
     wsRef.current.onmessage = (event) => {
       try {
         const rawData = JSON.parse(event.data);
-        console.log('📥 Raw widget data received:', rawData);
 
         // Decrypt sensor data if encrypted
         const data = deviceEncryption.decryptSensorData(rawData);
-        console.log('🔓 Decrypted widget data:', data);
 
         // Transform the data for widget consumption
         const transformedPayload = transformWidgetData(data, widget.type);
-        
+
         setData((prev) => {
-          // Keep only the last 50 points and add the new one
           const next = [...prev, transformedPayload].slice(-50);
           return next;
         });
       } catch (error) {
-        console.error('❌ Failed to process widget data:', error);
+        console.error('Failed to process widget data:', error);
       }
     };
     
     wsRef.current.onerror = (e) => {
-      console.error('❌ Widget WS error:', e);
+      console.error('Widget WS error:', e);
     };
-    
+
     wsRef.current.onclose = (evt) => {
-      console.log(`🔌 Widget WebSocket closed: ${widget.id}, code: ${evt.code}`);
+      console.log(`Widget WebSocket closed: ${widget.id}`);
     };
-    
+
     return () => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        console.log(`👋 Closing widget WebSocket: ${widget.id}`);
         wsRef.current.close();
       }
     };

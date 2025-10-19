@@ -116,6 +116,8 @@
   max-width: 320px;
   background: white;
   border-left: 1px solid #e2e8f0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .flow-canvas {

@@ -147,9 +147,6 @@ function DashboardCreator() {
           if (templateResponse.data.status === 'success') {
             const template = templateResponse.data.template;
             
-            console.log('📋 Loading dashboard template:', template.name);
-            console.log('🔧 Template widgets:', template.widgets);
-            console.log('📐 Template layout:', template.layout);
             
             // Ensure widgets and layout are always arrays
             const processedTemplate = {
