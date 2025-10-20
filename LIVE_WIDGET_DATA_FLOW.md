@@ -187,6 +187,46 @@ TrackedVariable.objects.create(
 2. Backend now auto-detects device nodes by checking if a Device exists with the extracted UUID
 
 ---
+
+### Automatic Cleanup
+
+**TrackedVariable and WidgetSample Cleanup**:
+When widgets are deleted or dashboards are removed, the system automatically cleans up associated database entries to prevent unbounded growth:
+
+**Widget Deletion** (dashboard update):
+- When a user deletes a widget from a dashboard in DashboardCreator, the frontend updates the dashboard's `widgets` array
+- Backend compares old widget IDs vs new widget IDs (line 1222-1240 in user/views.py)
+- For each deleted widget: deletes all WidgetSample entries, then deletes TrackedVariable entry
+- This prevents orphaned TrackedVariable and WidgetSample records
+
+**Dashboard Deletion**:
+- When a dashboard template is deleted entirely (line 1252-1269 in user/views.py)
+- Backend extracts all widget IDs from the dashboard
+- For each widget: deletes all WidgetSample entries, then deletes TrackedVariable entry
+- Dashboard is then deleted
+
+**Implementation**:
+```python
+# In dashboard_template_detail_view (PUT method)
+old_widget_ids = {w.get('id') for w in template.widgets or []}
+# ... serializer.save() ...
+new_widget_ids = {w.get('id') for w in updated_template.widgets or []}
+deleted_widget_ids = old_widget_ids - new_widget_ids
+
+if deleted_widget_ids:
+    for widget_id in deleted_widget_ids:
+        tracked_vars = TrackedVariable.objects.filter(widget_id=widget_id, dashboard_uuid=template.uuid)
+        for tv in tracked_vars:
+            WidgetSample.objects.filter(widget=tv).delete()
+        tracked_vars.delete()
+```
+
+**Why This Matters**:
+- Without cleanup, every widget ever created would leave permanent TrackedVariable entries
+- Sensor data would continue being routed to deleted widgets, wasting database space
+- WidgetSample table would grow unbounded with samples for non-existent widgets
+
+---
 ### Table Summary
 | Stage | Component / Table | Purpose | Critical Fields |
 |-------|-------------------|---------|----------------|
@@ -199,4 +239,4 @@ TrackedVariable.objects.create(
 | Rendering | `WidgetFactory` → widgets | Display live data | widget.dataSource |
 
 ---
-_Updated: 2025-10-19 - Added TrackedVariable troubleshooting and fixed device node detection logic_ 
+_Updated: 2025-10-19 - Added TrackedVariable troubleshooting, fixed device node detection logic, and implemented automatic cleanup for deleted widgets_ 
