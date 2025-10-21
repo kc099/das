@@ -47,7 +47,7 @@ export const nodeCategories = {
     }
   },
   function: {
-    label: 'Function',
+    label: 'Math',
     color: '#22c55e',
     nodes: {
       movingAverage: {
@@ -92,15 +92,15 @@ export const nodeCategories = {
           timeout: 5000
         }
       },
-      websocket: {
-        label: 'WebSocket',
-        icon: 'Zap',
-        config: {
-          url: 'ws://localhost:8080',
-          reconnect: true,
-          reconnectInterval: 5000
-        }
-      }
+      // websocket: {
+      //   label: 'WebSocket',
+      //   icon: 'Zap',
+      //   config: {
+      //     url: 'ws://localhost:8080',
+      //     reconnect: true,
+      //     reconnectInterval: 5000
+      //   }
+      // }
     }
   },
   storage: {
