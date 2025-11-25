@@ -176,7 +176,7 @@ class CacheService {
         return {
           hasPassword: false,
           username: null,
-          broker: { host: '13.203.165.247', port: 1883 },
+          broker: { host: '13.203.2.58', port: 1883 },
           connected: false,
         };
       }

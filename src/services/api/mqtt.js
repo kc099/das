@@ -18,7 +18,7 @@ export const mqttAPI = {
           password: null, // Ensure password is null on error
           connected: false,
           broker: {
-            host: '13.203.165.247',
+            host: '13.203.2.58',
             port: 1883,
             websocketPort: 1884
           }
