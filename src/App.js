@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import QueryProvider from './providers/QueryProvider';
 import Homepage from './pages/Homepage';
+import Portfolio from './pages/Portfolio';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
@@ -22,6 +23,7 @@ function App() {
       <Router>
       <Routes>
         <Route path="/" element={<Homepage />} />
+        <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

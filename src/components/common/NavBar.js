@@ -43,7 +43,7 @@ function NavBar() {
       <div className="nav-container">
         <div className="nav-logo">
           <Link to={isAuthenticated ? "/home" : "/"}>
-            <h2>Roboworks Automation</h2>
+            <h2>EdgeSync</h2>
           </Link>
         </div>
         <div className="nav-links">
@@ -58,6 +58,7 @@ function NavBar() {
             <>
               <a href="#features" className="nav-link">Features</a>
               <a href="#how-it-works" className="nav-link">How it works</a>
+              <Link to="/portfolio" className="nav-link">Portfolio</Link>
               <a href="#pricing" className="nav-link">Pricing</a>
               <Link to="/login" className="btn btn-outline">Login</Link>
               <Link to="/signup" className="btn btn-primary">Sign up</Link>

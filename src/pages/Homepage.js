@@ -101,12 +101,12 @@ function Homepage() {
         <div className="hero-container">
           <div className="hero-content">
             <h1 className="hero-title">
-              The Multitenant Platform for<br />
-              <span className="gradient-text">Industrial IoT</span>
+              The Smart Platform for<br />
+              <span className="gradient-text">Modern Factory</span>
             </h1>
             <p className="hero-subtitle">
 {/* A unified IoT Device management platform to connect legacy hardware, <br /> build visual data flows, and deploy powerful dashboards in days, not months. */}
-The edge compute platform that automation engineers <br /> an actually deploy, monitor, and maintain without becoming IT specialists.
+Deploy, Monitor, and Maintain Production dashboards in minutes.
             </p>
             <div className="hero-cta">
               <Link to="/signup" className="btn btn-primary btn-large">
@@ -117,7 +117,7 @@ The edge compute platform that automation engineers <br /> an actually deploy, m
               </Link>
             </div>
             <p className="hero-note">
-              Save up to 70% of IoT design time • No credit card required
+              Save up to 70% of Dashboard design time • No credit card required
             </p>
           </div>
           
@@ -128,8 +128,8 @@ The edge compute platform that automation engineers <br /> an actually deploy, m
       <section id="features" className="features">
         <div className="container">
           <div className="section-header">
-            <h2>Complete IoT Solution</h2>
-            <p>Everything you need to build, deploy, and scale IoT applications</p>
+            <h2>Complete Factory Solution</h2>
+            <p>Everything you need to build, deploy, and scale Factory Operations</p>
           </div>
           <div className="features-grid">
             {features.map((feature, index) => (
